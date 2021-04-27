@@ -1,0 +1,2 @@
+node/server/*
+!node/server/server.jar
