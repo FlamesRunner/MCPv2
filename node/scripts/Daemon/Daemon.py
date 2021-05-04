@@ -41,8 +41,6 @@ def action_query(query, params):
     get_db().commit()
 
 # Return JSON output
-
-
 def jsonify(input: dict):
     return json.dumps(input)
 
@@ -64,6 +62,15 @@ def run_cmd_helper(cmd: str, username: str):
         client.sendall((cmd + "\r\n").encode())
         client.close()
 
+"""
+    Returns the server status.
+    
+    Args: 
+        - Takes in MC server username
+
+    Returns:
+        - Boolean value, True if on, False if off
+"""
 def server_status(username: str):
     res = subprocess.run(['ps', '-U', username], stdout=subprocess.PIPE)
     if res.returncode > 0:
@@ -72,6 +79,15 @@ def server_status(username: str):
         return True
     return False
 
+"""
+    Returns console output.
+    
+    Args: 
+        - None
+
+    Returns:
+        - Returns JSON string containing log
+"""
 @app.route('/log', methods=['GET'])
 def get_log():
     user = request.environ['user_var']['username']
@@ -83,6 +99,15 @@ def get_log():
     return jsonify({"status": "success", "log": output})
 
 
+"""
+    Starts MC server.
+    
+    Args: 
+        - None
+
+    Returns:
+        - Returns JSON string as result.
+"""
 @app.route('/start', methods=['POST'])
 def start_server():
     max_ram = request.form.get("max_ram")
@@ -98,7 +123,14 @@ def start_server():
     os.system(cmd_str)
     return jsonify({"status": "success"})
 
-
+"""
+    Kills a Minecraft server.
+    
+    Args: 
+        - None
+    Returns:
+        - Returns JSON string indicating whether or not the server was successfully killed.
+"""
 @app.route('/kill', methods=['POST'])
 def kill_server():
     user = request.environ['user_var']['username']
@@ -108,7 +140,16 @@ def kill_server():
     os.system("pkill -U " + user + " -9 server_start")
     return jsonify({"status": "success"})
 
+"""
+    Runs a command on a Minecraft server.
+    
+    Args: 
+        - Takes in two parameters, cmd: str and username: str,
+    which are the command and username for the Minecraft user respectively.
 
+    Returns:
+        - Nothing
+"""
 @app.route('/cmd', methods=['POST'])
 def run_cmd():
     cmd = request.form.get("cmd")
@@ -117,7 +158,15 @@ def run_cmd():
     run_cmd_helper(cmd, request.environ['user_var']['username'])
     return jsonify({"status": "success"})
 
+"""
+    Gracefully stops a Minecraft server.
+    
+    Args: 
+        - None
 
+    Returns:
+        - Returns JSON string indicating whether or not the server was successfully stopped.
+"""
 @app.route('/stop', methods=['POST'])
 def stop_server():
     user = request.environ['user_var']['username']
@@ -127,7 +176,15 @@ def stop_server():
     os.system("pkill -U " + user + " -9 server_start")
     return jsonify({"status": "success"})
 
+"""
+    Returns power level of MC server.
+    
+    Args: 
+        - None
 
+    Returns:
+        - Returns JSON string indicating whether or not the server is on.
+"""
 @app.route('/status', methods=['GET'])
 def status():
     user = request.environ['user_var']['username']

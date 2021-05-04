@@ -64,3 +64,12 @@ The server's power level will be returned.
 
 Responses:
 - `{ "status": "success", "power_level": ("on" or "off") }`
+
+## Console output
+
+Request: GET /log
+
+The server's console output will be returned.
+
+Responses:
+- `{ "status": "success", "log": "console output" }`
