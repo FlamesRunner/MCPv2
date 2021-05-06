@@ -58,7 +58,7 @@ Responses:
 
 ## Server status
 
-Request: POST /status
+Request: GET /status
 
 The server's power level will be returned.
 
