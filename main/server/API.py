@@ -165,6 +165,19 @@ def send_cmd():
     else:
         return jsonify({"status": "error", "msg": "Server is currently offline."})
 
+@app.route('/api/status', methods=['GET'])
+def server_status():
+    # Check if server is owned by user
+    server_id = request.args.get("server_id")
+    if server_id is None:
+        return jsonify({"status": "error", "msg": "No server ID specified."})
+    user_id = request.environ['user_var']['id']
+    server_dict = get_server(user_id, server_id)
+    if server_dict == None:
+        return jsonify({"status": "error", "msg": "Server could not be found."})
+    request_data = requests.get(HTTP_PREFIX + server_dict["host"] + "/status", headers={"TOKEN": server_dict["token"]})
+    request_dict = json.loads(request_data.text)
+    return jsonify({"status": "success", "power_level": request_dict["power_level"]})
 
 if __name__ == "__main__":
     app.run()
