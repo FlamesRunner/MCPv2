@@ -192,4 +192,4 @@ def status():
     return jsonify({"status": "success", "power_level": "on" if status else "off"})
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=5001)
