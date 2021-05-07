@@ -8,7 +8,7 @@ export default function Home() {
         height: "60vh"
       }}
     >
-        <div class="my-auto mx-auto text-white text-center">
+        <div className="my-auto mx-auto text-white text-center">
             <h1 className="text-5xl">Minecraft Server Control Panel</h1>
             <h3 className="text-2xl mt-4">Manage your servers with ease, whether you're accessing the console, or need to stop the server and more.</h3>
         </div>
