@@ -23,7 +23,7 @@ fi
 
 echo ">>> Installing prerequisites..."
 sleep 2
-apt-get install -y git python3.7 python3-pip sqlite3 curl wget python3-flask nginx openssl
+apt-get install -y git python3.7 python3-pip sqlite3 curl wget python3-flask nginx openssl openjdk-11-jre
 
 echo ">>> Installing build tools..."
 sleep 2
@@ -95,7 +95,7 @@ systemctl enable mcp-node.service
 echo ">>> Generating SSL certificates..."
 echo ">>> When prompted for the FQDN, enter your public IP address."
 
-PUBLIC_IP=$(curl icanhazip.com)
+PUBLIC_IP=$(curl -s icanhazip.com)
 echo ">>> For your convenience, here is a guess of your public IP: $PUBLIC_IP"
 sleep 2
 mkdir /etc/nginx/ssl
