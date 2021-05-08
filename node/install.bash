@@ -93,6 +93,10 @@ systemctl enable mcp-node.service
 
 
 echo ">>> Generating SSL certificates..."
+echo ">>> When prompted for the FQDN, enter your public IP address."
+
+PUBLIC_IP=$(curl icanhazip.com)
+echo ">>> For your convenience, here is a guess of your public IP: $PUBLIC_IP"
 sleep 2
 mkdir /etc/nginx/ssl
 openssl req -x509 -nodes -days 1000 -newkey rsa:4096 -keyout /etc/nginx/ssl/cert.key -out /etc/nginx/ssl/cert.pem
@@ -105,8 +109,8 @@ echo ">>> Configuring NGINX..."
 sleep 2
 cat <<EOT > /etc/nginx/sites-available/mcp-node
 server {
-        listen 5000;
-        listen [::]:5000;
+        listen 5000 ssl;
+        listen [::]:5000 ssl;
         location / {
                 proxy_pass http://localhost:5001;
         }
