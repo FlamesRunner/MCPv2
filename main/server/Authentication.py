@@ -91,7 +91,6 @@ class AuthenticationMiddleware():
     def __call__(self, environ, start_response):
         request = Request(environ)
         token = request.headers.get('TOKEN')
-        print(request.path)
         if request.path == '/authenticate':
             return self.generate_token(environ, start_response)
         elif request.path == '/new_account':

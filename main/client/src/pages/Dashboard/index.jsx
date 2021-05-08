@@ -2,16 +2,21 @@ import React from "react";
 import { useContext } from "react";
 import Background from "../../images/background.jpg";
 import AuthenticationContext from "../../contexts/AuthenticationContext";
-import { Redirect } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
 import { useServers } from "../../utils/useServers";
 import LoadingScreen from "../../components/LoadingScreen";
 
 export default function Dashboard() {
   const authContext = useContext(AuthenticationContext);
   const servers = useServers(authContext.authData.val);
+  const history = useHistory();
 
   if (authContext.authData == null) return <Redirect to="/signin" />;
   if (servers == null) return <LoadingScreen />;
+
+  const loadServerPage = (server_id) => {
+    history.push("/server/" + server_id);
+  };
 
   return (
     <>
@@ -38,7 +43,7 @@ export default function Dashboard() {
                 <div
                   className="rounded-md p-4 w-full bg-white cursor-pointer"
                   onClick={() => {
-                    alert("you clik");
+                    loadServerPage(s.server_id);
                   }}
                 >
                   <p>
@@ -48,12 +53,8 @@ export default function Dashboard() {
               );
             })}
           {servers.servers.length === 0 && (
-            <div
-              className="rounded-md p-4 w-full bg-white"
-            >
-              <p>
-                No servers were found.
-              </p>
+            <div className="rounded-md p-4 w-full bg-white">
+              <p>No servers were found.</p>
             </div>
           )}
         </div>

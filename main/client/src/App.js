@@ -6,12 +6,14 @@ import {
   Route,
   Redirect
 } from "react-router-dom";
-import Home from "./pages/Home";
-import SignIn from "./pages/SignIn";
-import Dashboard from "./pages/Dashboard";
 import AuthenticationContext from "./contexts/AuthenticationContext";
 import useAuthentication from "./utils/useAuthentication";
 import Navbar from "./components/Navbar";
+
+import Home from "./pages/Home";
+import SignIn from "./pages/SignIn";
+import Dashboard from "./pages/Dashboard";
+import ManageServer from "./pages/ManageServer";
 
 
 const SignOut = () => {
@@ -42,6 +44,7 @@ export default function App() {
             <Route path="/sign-out">
               <SignOut />
             </Route>
+            <Route path="/server/:id" component={ManageServer} />
             <Route path="/">
               <Home />
             </Route>

@@ -189,7 +189,9 @@ def stop_server():
 def status():
     user = request.environ['user_var']['username']
     status = server_status(user)
-    return jsonify({"status": "success", "power_level": "on" if status else "off"})
+    result = subprocess.run(['./memory_usage.bash', user], stdout=subprocess.PIPE)
+    memory_usage = result.stdout.decode('utf-8').rstrip('\n')
+    return jsonify({"status": "success", "power_level": "on" if status else "off", "memory_usage": memory_usage })
 
 if __name__ == "__main__":
     app.run(port=5001)

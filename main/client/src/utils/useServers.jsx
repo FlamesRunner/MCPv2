@@ -21,8 +21,8 @@ export const useServers = () => {
         console.error(e);
       }
     };
-    fetchData();
-  }, [authContext]);
+    if (servers == null) fetchData();
+  });
 
   return servers;
 };

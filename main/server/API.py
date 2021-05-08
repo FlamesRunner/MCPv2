@@ -180,7 +180,7 @@ def server_status():
     request_data = requests.get(
         HTTP_PREFIX + server_dict["host"] + "/status", headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
-    return jsonify({"status": "success", "power_level": request_dict["power_level"]})
+    return jsonify({"status": "success", "power_level": request_dict["power_level"], "memory_usage": request_dict["memory_usage"] })
 
 
 @app.route('/api/server/list', methods=['GET'])
@@ -233,7 +233,6 @@ def create_server():
         return jsonify({"status": "error", "msg": "Could not connect to host."})
 
     if int(max_ram) < int(min_ram):
-        print(max_ram, min_ram)
         return jsonify({"status": "error", "msg": "The maximum amount of memory must be larger or equal to the minimum amount of memory allocated."})
 
     # Finally done validation
