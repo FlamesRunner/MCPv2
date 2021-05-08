@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/wait.h>
+#include <sys/prctl.h>
+#include <unistd.h>
+#include <signal.h>
+#include <errno.h>
 
 #define CONSOLE_BUFFER_SIZE 8192 // 8192 bytes = 8KB
 #define CMD_BUFFER_SIZE 1024     // Command buffer
@@ -14,6 +18,17 @@
 #define MAX_ARG_LEN 50
 #define NUM_CONNECTIONS 100
 #define CMD_PATH "mcp_in.sock"
+
+int process_terminated = 0;
+
+/**
+ * handler: used for the SIGCHLD signal, to handle the termination of the Java process.
+ **/
+void handler(int sig)
+{
+    pid_t chpid = wait(NULL);
+    process_terminated = 1;
+}
 
 /**
  * start_server: given max_ram and min_ram with console_fileno, cmd_fileno to return,
@@ -31,6 +46,7 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
         fprintf(stderr, "%s\n", strerror(errno));
         exit(errno);
     }
+    signal(SIGCHLD, handler);
     if (fork() == 0)
     {
         // Child
@@ -54,7 +70,7 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
         strcat(min_ram_full, min_ram);
         strcat(max_ram_full, max_ram);
 
-        int chdir_ret = chdir("../server");
+        int chdir_ret = chdir("./server");
         if (chdir_ret == -1)
         {
             fprintf(stderr, "Failed to change directories.\n");
@@ -76,28 +92,36 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
  **/
 void read_cmd(int cmd_fd)
 {
-    if (fork() == 0) {
+    if (fork() == 0)
+    {
         struct sockaddr_un address, client_address;
         address.sun_family = AF_UNIX;
         strcpy(address.sun_path, CMD_PATH);
         unlink(CMD_PATH);
 
         int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-        bind(fd, (struct sockaddr *) (&address), sizeof(address));
+        bind(fd, (struct sockaddr *)(&address), sizeof(address));
         listen(fd, NUM_CONNECTIONS);
 
         int newsockfd;
         int clilen = sizeof(client_address);
-        while (newsockfd = accept(fd, (struct sockaddr *) &client_address, &clilen)) {
-            if (fork() == 0) {
+        while (newsockfd = accept(fd, (struct sockaddr *) &client_address, &clilen))
+        {
+            if (fork() == 0)
+            {
+                prctl(PR_SET_PDEATHSIG, SIGHUP);
                 // Child
                 char buf[CMD_BUFFER_SIZE];
                 int n = 0;
-                while ((n = read(newsockfd, buf, sizeof(buf) - 1)) > 0) {
+                while ((n = read(newsockfd, buf, sizeof(buf) - 1)) > 0)
+                {
                     buf[n] = '\n';
                     int b = write(cmd_fd, buf, n);
                 }
                 close(newsockfd);
+                exit(0);
+            } else {
+                break;
             }
         }
     }
@@ -122,7 +146,7 @@ int main(int argc, char **argv)
     read_cmd(cmd_fileno);
     int n;
     char buffer[CONSOLE_BUFFER_SIZE];
-    while ((n = read(console_fileno, buffer, sizeof(buffer))) > 0)
+    while ((n = read(console_fileno, buffer, sizeof(buffer))) > 0 && process_terminated == 0)
     {
         int stdout_write = write(STDOUT_FILENO, buffer, n);
         int console_write = write(fileno(console_ptr), buffer, n);
