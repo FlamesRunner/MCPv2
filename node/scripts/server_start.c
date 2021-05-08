@@ -105,11 +105,10 @@ void read_cmd(int cmd_fd)
 
         int newsockfd;
         int clilen = sizeof(client_address);
-        while (newsockfd = accept(fd, (struct sockaddr *) &client_address, &clilen))
+        while (newsockfd = accept(fd, (struct sockaddr *)&client_address, &clilen))
         {
             if (fork() == 0)
             {
-                prctl(PR_SET_PDEATHSIG, SIGHUP);
                 // Child
                 char buf[CMD_BUFFER_SIZE];
                 int n = 0;
@@ -120,8 +119,6 @@ void read_cmd(int cmd_fd)
                 }
                 close(newsockfd);
                 exit(0);
-            } else {
-                break;
             }
         }
     }

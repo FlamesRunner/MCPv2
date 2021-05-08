@@ -41,7 +41,7 @@ export default function ManageServer() {
       const data = await response.json();
       setStatus(data);
       if (data != null && server_data_internal != null) {
-        if (lastPowerStatus != data.power_level) {
+        if (lastPowerStatus !== data.power_level) {
           setPowerCycling(false);
           setLastPowerStatus(data.power_level);
         }
@@ -118,7 +118,7 @@ export default function ManageServer() {
           </h3>
         </div>
       </div>
-      <div class="md:flex md:flex-row h-screen w-full">
+      <div className="md:flex md:flex-row h-screen w-full">
         <div className="p-8 bg-gray-200 w-full md:w-1/5">
           <h1 className="text-2xl">
             Server status:{" "}
@@ -151,7 +151,7 @@ export default function ManageServer() {
               ></div>
             </div>
           </div>
-          <div id="power_controls" class="mt-4 flex flex-row w-full">
+          <div id="power_controls" className="mt-4 flex flex-row w-full">
             <p
               className={`${
                 status != null && !powerCycling && "hidden"

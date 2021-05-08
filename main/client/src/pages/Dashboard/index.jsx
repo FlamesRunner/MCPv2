@@ -21,7 +21,7 @@ export default function Dashboard() {
   return (
     <>
       <div
-        className="bg-fixed w-screen bg-no-repeat bg-cover flex"
+        className="bg-fixed w-full bg-no-repeat bg-cover flex"
         style={{
           backgroundImage: "url(" + Background + ")",
           height: "40vh",

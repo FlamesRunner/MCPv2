@@ -85,6 +85,12 @@ export default function Navbar() {
               Dashboard
             </Link>
             <Link
+              to="/create-server"
+              className="block md:inline-block text-blue-900 hover:text-blue-500 px-3 py-3 border-b-2 border-blue-900 md:border-none"
+            >
+              Add server
+            </Link>
+            <Link
               to="/sign-out"
               className="block md:inline-block text-blue-900 hover:text-blue-500 px-3 py-3 border-b-2 border-blue-900 md:border-none"
             >
@@ -99,6 +105,12 @@ export default function Navbar() {
               className="block md:inline-block text-blue-900 hover:text-blue-500 px-3 py-3 border-b-2 border-blue-900 md:border-none"
             >
               Home
+            </Link>
+            <Link
+              to="/create-account"
+              className="block md:inline-block text-blue-900 hover:text-blue-500 px-3 py-3 border-b-2 border-blue-900 md:border-none"
+            >
+              Create account
             </Link>
             <Link
               to="/signin"

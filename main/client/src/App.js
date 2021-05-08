@@ -14,6 +14,8 @@ import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
 import Dashboard from "./pages/Dashboard";
 import ManageServer from "./pages/ManageServer";
+import CreateAccount from "./pages/CreateAccount";
+import CreateServer from "./pages/CreateServer";
 
 
 const SignOut = () => {
@@ -45,6 +47,12 @@ export default function App() {
               <SignOut />
             </Route>
             <Route path="/server/:id" component={ManageServer} />
+            <Route path="/create-account">
+              <CreateAccount />
+            </Route>
+            <Route path="/create-server">
+              <CreateServer />
+            </Route>
             <Route path="/">
               <Home />
             </Route>

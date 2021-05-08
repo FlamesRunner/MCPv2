@@ -14,7 +14,7 @@ from flask import Flask, render_template, g, request, redirect, url_for, make_re
 from Authentication import AuthenticationMiddleware
 app = Flask(__name__)
 app.wsgi_app = AuthenticationMiddleware(app.wsgi_app)
-HTTP_PREFIX = "http://"
+HTTP_PREFIX = "https://"
 
 # Get database object
 
@@ -81,7 +81,7 @@ def start_server():
     server_dict = get_server(user_id, server_id)
     if server_dict == None:
         return jsonify({"status": "error", "msg": "Server could not be found."})
-    request_data = requests.post(HTTP_PREFIX + server_dict["host"] + "/start", data={"min_ram": str(
+    request_data = requests.post(HTTP_PREFIX + server_dict["host"] + "/start", verify=False, data={"min_ram": str(
         server_dict["min_ram"]) + "M", "max_ram": str(server_dict["max_ram"]) + "M"}, headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
     if request_dict["status"] == "success":
@@ -101,7 +101,7 @@ def kill_server():
     if server_dict == None:
         return jsonify({"status": "error", "msg": "Server could not be found."})
     request_data = requests.post(
-        HTTP_PREFIX + server_dict["host"] + "/kill", headers={"TOKEN": server_dict["token"]})
+        HTTP_PREFIX + server_dict["host"] + "/kill", verify=False, headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
     if request_dict["status"] == "success":
         return jsonify({"status": "success", "msg": "Successfully killed server."})
@@ -120,7 +120,7 @@ def stop_server():
     if server_dict == None:
         return jsonify({"status": "error", "msg": "Server could not be found."})
     request_data = requests.post(
-        HTTP_PREFIX + server_dict["host"] + "/kill", headers={"TOKEN": server_dict["token"]})
+        HTTP_PREFIX + server_dict["host"] + "/kill", verify=False, headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
     if request_dict["status"] == "success":
         return jsonify({"status": "success", "msg": "Successfully stopped server."})
@@ -139,7 +139,7 @@ def console_output():
     if server_dict == None:
         return jsonify({"status": "error", "msg": "Server could not be found."})
     request_data = requests.get(
-        HTTP_PREFIX + server_dict["host"] + "/log", headers={"TOKEN": server_dict["token"]})
+        HTTP_PREFIX + server_dict["host"] + "/log", verify=False, headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
     if request_dict["status"] == "success":
         return jsonify({"status": "success", "log": request_dict["log"]})
@@ -159,7 +159,7 @@ def send_cmd():
     if server_dict == None:
         return jsonify({"status": "error", "msg": "Server could not be found."})
     request_data = requests.post(HTTP_PREFIX + server_dict["host"] + "/cmd", data={
-                                 "cmd": cmd}, headers={"TOKEN": server_dict["token"]})
+                                 "cmd": cmd}, verify=False, headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
     if request_dict["status"] == "success":
         return jsonify({"status": "success", "msg": "Successfully executed command."})
@@ -178,7 +178,7 @@ def server_status():
     if server_dict == None:
         return jsonify({"status": "error", "msg": "Server could not be found."})
     request_data = requests.get(
-        HTTP_PREFIX + server_dict["host"] + "/status", headers={"TOKEN": server_dict["token"]})
+        HTTP_PREFIX + server_dict["host"] + "/status", verify=False, headers={"TOKEN": server_dict["token"]})
     request_dict = json.loads(request_data.text)
     return jsonify({"status": "success", "power_level": request_dict["power_level"], "memory_usage": request_dict["memory_usage"] })
 
@@ -227,7 +227,7 @@ def create_server():
 
     # Attempt to connect to the target server.
     try:
-        if requests.get(HTTP_PREFIX + filtered_ip.__str__() + ":5001/status", headers={"TOKEN": server_token}).status_code == 401:
+        if requests.get(HTTP_PREFIX + filtered_ip.__str__() + ":5000/status", verify=False, headers={"TOKEN": server_token}).status_code == 401:
             return jsonify({"status": "error", "msg": "The server token specified is invalid."})
     except:
         return jsonify({"status": "error", "msg": "Could not connect to host."})
@@ -237,7 +237,7 @@ def create_server():
 
     # Finally done validation
     action_query("INSERT INTO servers (server_name, owned_by, host, token, max_ram, min_ram) VALUES (?, ?, ?, ?, ?, ?)",
-                 (server_name, user_id, filtered_ip.__str__() + ":5001", server_token, max_ram, min_ram))
+                 (server_name, user_id, filtered_ip.__str__() + ":5000", server_token, max_ram, min_ram))
     return jsonify({"status": "success", "msg": "The server was successfully added."})
 
 @app.route('/api/server/delete', methods=['POST'])
