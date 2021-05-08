@@ -4,14 +4,14 @@ import AuthenticationContext from "../contexts/AuthenticationContext";
 export const useServers = () => {
   const authContext = useContext(AuthenticationContext);
   const [servers, setServers] = useState(null);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       const response = await fetch("/api/server/list", {
         method: "GET",
         cache: "no-cache",
         headers: {
-          TOKEN: authContext.authData.val,
+          TOKEN: authContext.authData != null ? authContext.authData.val : null,
         },
       });
       try {
@@ -19,6 +19,10 @@ export const useServers = () => {
         setServers(data);
       } catch (e) {
         console.error(e);
+        setServers({
+          "status": "success",
+          "servers": []
+        });
       }
     };
     if (servers == null) fetchData();

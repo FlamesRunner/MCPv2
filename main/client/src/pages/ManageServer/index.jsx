@@ -17,12 +17,8 @@ export default function ManageServer() {
   const [status, setStatus] = useState(null);
   const [memoryWidth, setMemoryWidth] = useState(0);
   const [consoleLog, setConsoleLog] = useState("Please wait...");
-  const [powerClasses, setPowerClasses] = useState({
-    start: "hidden",
-    stop: "hidden",
-  });
   const cmdRef = useRef(null);
-  const [powerCycling, setPowerCycling] = useState(false);
+  const [powerCycling, setPowerCycling] = useState(true);
   const [lastPowerStatus, setLastPowerStatus] = useState();
   const [currentCommand, setCurrentCommand] = useState("");
   const authContext = useContext(AuthenticationContext);
@@ -45,22 +41,10 @@ export default function ManageServer() {
       const data = await response.json();
       setStatus(data);
       if (data != null && server_data_internal != null) {
-        if (lastPowerStatus !== data.power_level) {
+        if (lastPowerStatus != data.power_level) {
           setPowerCycling(false);
           setLastPowerStatus(data.power_level);
         }
-        if (data.power_level === "on" && !powerCycling) {
-          setPowerClasses({
-            start: "hidden",
-            stop: "",
-          });
-        } else if (data.power_level === "off" && !powerCycling) {
-          setPowerClasses({
-            start: "",
-            stop: "hidden",
-          });
-        }
-        console.log(server_data_internal);
         setMemoryWidth(
           (parseInt(data.memory_usage) /
             parseInt(server_data_internal[0].max_ram)) *
@@ -89,12 +73,14 @@ export default function ManageServer() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const server_data_internal = servers.servers.filter((srv) => {
-        return srv.server_id === parseInt(id);
-      });
-      getServerStatus(server_data_internal);
-      getConsoleLog(server_data_internal);
-    }, 1500);
+      if (servers !== null) {
+        const server_data_internal = servers.servers.filter((srv) => {
+          return srv.server_id === parseInt(id);
+        });
+        getServerStatus(server_data_internal);
+        getConsoleLog(server_data_internal);
+      }
+    }, 1000);
     return () => clearInterval(interval);
   });
 
@@ -112,10 +98,6 @@ export default function ManageServer() {
   }
 
   const disablePowerButtons = () => {
-    setPowerClasses({
-      start: "hidden",
-      stop: "hidden",
-    });
     setPowerCycling(true);
     setLastPowerStatus(status.power_level);
   };
@@ -152,7 +134,7 @@ export default function ManageServer() {
           <p className="uppercase">
             Memory usage:{" "}
             {status != null &&
-              status.memory_usage + "MB of " + server_data[0].max_ram + "MB"}
+              status.memory_usage + "MB/" + server_data[0].max_ram + "MB"}
             {status == null && (
               <span className="text-gray-500">(Loading...)</span>
             )}
@@ -169,37 +151,47 @@ export default function ManageServer() {
               ></div>
             </div>
           </div>
-          <div id="power_controls" class="inline-block mt-4">
-            <p className={status != null && !powerCycling && "hidden"}>
+          <div id="power_controls" class="mt-4 flex flex-row w-full">
+            <p
+              className={`${
+                status != null && !powerCycling && "hidden"
+              } flex-none`}
+            >
               Power controls are loading...
             </p>
-            <button
-              onClick={() => {
-                disablePowerButtons();
-                startServer(authContext.authData.val, id);
-              }}
-              className={`bg-green-600 text-white px-4 py-2 rounded-md mr-2 ${powerClasses.start}`}
-            >
-              Start server
-            </button>
-            <button
-              onClick={() => {
-                disablePowerButtons();
-                stopServer(authContext.authData.val, id);
-              }}
-              className={`bg-red-400 text-white px-4 py-2 rounded-md mr-2 ${powerClasses.stop}`}
-            >
-              Stop server
-            </button>
-            <button
-              onClick={() => {
-                disablePowerButtons();
-                killServer(authContext.authData.val, id);
-              }}
-              className={`bg-red-600 text-white px-4 py-2 rounded-md ${powerClasses.stop}`}
-            >
-              Kill server
-            </button>
+            <div className={`flex w-full ${powerCycling ? "hidden" : (status?.power_level === "on" ? "hidden" : "")}`}>
+              <button
+                onClick={() => {
+                  disablePowerButtons();
+                  startServer(authContext.authData.val, id);
+                }}
+                className={`bg-green-600 text-white px-4 py-2 rounded-md mr-2 w-full ${powerCycling ? "hidden" : (status?.power_level === "on" ? "hidden" : "")}`}
+              >
+                Start server
+              </button>
+            </div>
+            <div className={`flex w-full ${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}>
+              <button
+                onClick={() => {
+                  disablePowerButtons();
+                  stopServer(authContext.authData.val, id);
+                }}
+                className={`bg-red-400 text-white px-4 py-2 rounded-md mr-2 w-full $${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}
+              >
+                Stop server
+              </button>
+            </div>
+            <div className={`flex w-full ${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}>
+              <button
+                onClick={() => {
+                  disablePowerButtons();
+                  killServer(authContext.authData.val, id);
+                }}
+                className={`bg-red-600 text-white px-4 py-2 rounded-md w-full ${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}
+              >
+                Kill server
+              </button>
+            </div>
           </div>
           <div
             id="cmd_area"
@@ -240,7 +232,7 @@ export default function ManageServer() {
           <div className="h-1/7 bg-gray-400 p-8 text-black">
             <h1 className="text-2xl">Console</h1>
           </div>
-          <div className="px-4 py-2 overflow-y-scroll">
+          <div className="px-4 py-2 overflow-y-scroll console-font">
             {consoleLog
               .split("\n")
               .reverse()

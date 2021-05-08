@@ -8,7 +8,7 @@ import LoadingScreen from "../../components/LoadingScreen";
 
 export default function Dashboard() {
   const authContext = useContext(AuthenticationContext);
-  const servers = useServers(authContext.authData.val);
+  const servers = useServers();
   const history = useHistory();
 
   if (authContext.authData == null) return <Redirect to="/signin" />;
