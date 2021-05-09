@@ -213,7 +213,7 @@ def create_server():
     if server_host is None or server_token is None or server_name is None or max_ram is None or min_ram is None:
         return jsonify({"status": "error", "msg": "One or more fields are empty."})
 
-    if not server_name.isalnum():
+    if not server_name.replace(" ", "").isalnum():
         return jsonify({"status": "error", "msg": "The server name must be alphanumeric."})
 
     filtered_ip = ""

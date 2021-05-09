@@ -76,6 +76,10 @@ async function createServer(token, name, host, server_token, min_ram, max_ram) {
   ]);
 }
 
+async function deleteServer(token, server_id) {
+  return await helperFunction("delete", server_id, token);
+}
+
 export {
   startServer,
   stopServer,
@@ -83,4 +87,5 @@ export {
   getConsole,
   sendCommand,
   createServer,
+  deleteServer
 };

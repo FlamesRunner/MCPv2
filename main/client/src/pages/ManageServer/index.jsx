@@ -5,12 +5,14 @@ import AuthenticationContext from "../../contexts/AuthenticationContext";
 import { Redirect, useParams } from "react-router-dom";
 import { useServers } from "../../utils/useServers";
 import LoadingScreen from "../../components/LoadingScreen";
+import {LoadingAnimation} from "../../components/LoadingAnimation";
 import {
   startServer,
   stopServer,
   killServer,
   getConsole,
   sendCommand,
+  deleteServer,
 } from "../../utils/server_helpers";
 
 export default function ManageServer() {
@@ -21,6 +23,7 @@ export default function ManageServer() {
   const [powerCycling, setPowerCycling] = useState(true);
   const [lastPowerStatus, setLastPowerStatus] = useState();
   const [currentCommand, setCurrentCommand] = useState("");
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   const authContext = useContext(AuthenticationContext);
 
   const servers = useServers();
@@ -93,13 +96,24 @@ export default function ManageServer() {
           return srv.server_id === parseInt(id);
         });
 
-  if (server_data.length === 0) {
+  if (server_data.length === 0 || shouldRedirect) {
     return <Redirect to="/dashboard" />;
   }
 
   const disablePowerButtons = () => {
     setPowerCycling(true);
     setLastPowerStatus(status.power_level);
+  };
+
+  const deleteServerFcn = async (e) => {
+    e.preventDefault();
+    setPowerCycling(true);
+    setLastPowerStatus(status.power_level);
+    const res = await deleteServer(authContext.authData.val, id);
+    console.log(res);
+    if (res.status === "success") {
+      setShouldRedirect(true);
+    }
   };
 
   return (
@@ -155,39 +169,81 @@ export default function ManageServer() {
             <p
               className={`${
                 status != null && !powerCycling && "hidden"
-              } flex-none`}
+              } flex-none mx-auto`}
             >
-              Power controls are loading...
+              <LoadingAnimation width={50} height={50} />
             </p>
-            <div className={`flex w-full ${powerCycling ? "hidden" : (status?.power_level === "on" ? "hidden" : "")}`}>
+            <div
+              className={`w-full ${
+                powerCycling
+                  ? "hidden"
+                  : status?.power_level === "on"
+                  ? "hidden"
+                  : ""
+              }`}
+            >
               <button
                 onClick={() => {
                   disablePowerButtons();
                   startServer(authContext.authData.val, id);
                 }}
-                className={`bg-green-600 text-white px-4 py-2 rounded-md mr-2 w-full ${powerCycling ? "hidden" : (status?.power_level === "on" ? "hidden" : "")}`}
+                className={`bg-green-600 text-white px-4 py-2 rounded-md mr-2 w-full ${
+                  powerCycling
+                    ? "hidden"
+                    : status?.power_level === "on"
+                    ? "hidden"
+                    : ""
+                }`}
               >
                 Start server
               </button>
             </div>
-            <div className={`flex w-full ${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}>
+            <div
+              className={`flex w-full ${
+                powerCycling
+                  ? "hidden"
+                  : status?.power_level === "off"
+                  ? "hidden"
+                  : ""
+              }`}
+            >
               <button
                 onClick={() => {
                   disablePowerButtons();
                   stopServer(authContext.authData.val, id);
                 }}
-                className={`bg-red-400 text-white px-4 py-2 rounded-md mr-2 w-full $${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}
+                className={`bg-red-400 text-white px-4 py-2 rounded-md mr-2 w-full $${
+                  powerCycling
+                    ? "hidden"
+                    : status?.power_level === "off"
+                    ? "hidden"
+                    : ""
+                }`}
               >
                 Stop server
               </button>
             </div>
-            <div className={`flex w-full ${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}>
+            <div
+              className={`flex w-full ${
+                powerCycling
+                  ? "hidden"
+                  : status?.power_level === "off"
+                  ? "hidden"
+                  : ""
+              }`}
+            >
               <button
                 onClick={() => {
                   disablePowerButtons();
                   killServer(authContext.authData.val, id);
                 }}
-                className={`bg-red-600 text-white px-4 py-2 rounded-md w-full ${powerCycling ? "hidden" : (status?.power_level === "off" ? "hidden" : "")}`}
+                className={`bg-red-600 text-white px-4 py-2 rounded-md w-full ${
+                  powerCycling
+                    ? "hidden"
+                    : status?.power_level === "off"
+                    ? "hidden"
+                    : ""
+                }`}
               >
                 Kill server
               </button>
@@ -227,7 +283,16 @@ export default function ManageServer() {
               Send
             </button>
           </div>
+          <div className={`flex-none ${powerCycling ? "hidden" : ""}`}>
+            <button
+              onClick={deleteServerFcn}
+              className="rounded-md bg-red-500 text-white py-2 px-4 w-full mt-4"
+            >
+              Delete server
+            </button>
+          </div>
         </div>
+
         <div className="w-full md:w-4/5 h-full bg-black text-white flex flex-col">
           <div className="h-1/7 bg-gray-400 p-8 text-black">
             <h1 className="text-2xl">Console</h1>

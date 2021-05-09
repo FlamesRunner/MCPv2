@@ -36,3 +36,23 @@
     transform: rotate(360deg);
   }
 }
+
+.bg-cus-darkest-green {
+  background-color: #476A6F;
+}
+
+.bg-cus-dark-green {
+  background-color: #519E8A;
+}
+
+.bg-cus-green {
+  background-color: #519E8A;
+}
+
+.bg-cus-sage {
+  background-color: #C5C9A4;
+}
+
+.bg-cus-pink {
+  background-color: #ECBEB4;
+}
