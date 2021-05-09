@@ -19,7 +19,7 @@
 #define NUM_CONNECTIONS 100
 #define CMD_PATH "mcp_in.sock"
 
-int process_terminated = 0;
+int process_terminated = 0; # Needs to be fixed. This does not do anything as each fork copies its own version of this veriable.
 
 /**
  * handler: used for the SIGCHLD signal, to handle the termination of the Java process.
