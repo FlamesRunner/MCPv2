@@ -56,6 +56,7 @@ sleep 2
 mkdir /var/local/mcp-service
 cp -R ~/mcp-skel /var/local/mcp-service/mcp-skel
 cp -R ~/mcp-node-files/scripts/Daemon /var/local/mcp-service/daemon
+cp ~/mcp-node-files/scripts/add-server.bash ~
 
 echo ">>> Installing Flask..."
 sleep 2
