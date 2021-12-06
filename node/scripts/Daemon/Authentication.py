@@ -1,16 +1,21 @@
 import sqlite3
 from flask import g
+from dotenv import dotenv_values
 from werkzeug.wrappers import Request, Response, ResponseStream
 
 class AuthenticationMiddleware():
     '''
     Authentication middleware
     '''
+    env_variables = {}
 
     def __init__(self, app):
         self.app = app
+        self.env_variables = dotenv_values(".env")
 
     def authenticate(self, token: str):
+        if self.env_variables.get('MASTER_TOKEN') == token:
+            return "root"
         data = self.query_db("SELECT * FROM servers WHERE token=?", (token,), True)
         if data == None:
             return False

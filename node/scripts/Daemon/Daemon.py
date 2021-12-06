@@ -8,6 +8,7 @@ import hashlib
 import secrets
 import time
 import os
+from dotenv import load_dotenv
 from datetime import datetime
 from flask import Flask, render_template, g, request, redirect, url_for, make_response
 app = Flask(__name__)
@@ -41,6 +42,8 @@ def action_query(query, params):
     get_db().commit()
 
 # Return JSON output
+
+
 def jsonify(input: dict):
     return json.dumps(input)
 
@@ -55,12 +58,15 @@ def jsonify(input: dict):
     Returns:
         - Nothing
 """
+
+
 def run_cmd_helper(cmd: str, username: str):
     path = '/home/' + username
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
         client.connect(path + "/mcp_in.sock")
         client.sendall((cmd + "\r\n").encode())
         client.close()
+
 
 """
     Returns the server status.
@@ -71,6 +77,8 @@ def run_cmd_helper(cmd: str, username: str):
     Returns:
         - Boolean value, True if on, False if off
 """
+
+
 def server_status(username: str):
     res = subprocess.run(['ps', '-U', username], stdout=subprocess.PIPE)
     if res.returncode > 0:
@@ -78,6 +86,7 @@ def server_status(username: str):
     if "server_start" in res.stdout.decode("utf-8"):
         return True
     return False
+
 
 """
     Returns console output.
@@ -88,6 +97,8 @@ def server_status(username: str):
     Returns:
         - Returns JSON string containing log
 """
+
+
 @app.route('/log', methods=['GET'])
 def get_log():
     user = request.environ['user_var']['username']
@@ -108,6 +119,8 @@ def get_log():
     Returns:
         - Returns JSON string as result.
 """
+
+
 @app.route('/start', methods=['POST'])
 def start_server():
     max_ram = request.form.get("max_ram")
@@ -123,6 +136,7 @@ def start_server():
     os.system(cmd_str)
     return jsonify({"status": "success"})
 
+
 """
     Kills a Minecraft server.
     
@@ -131,6 +145,8 @@ def start_server():
     Returns:
         - Returns JSON string indicating whether or not the server was successfully killed.
 """
+
+
 @app.route('/kill', methods=['POST'])
 def kill_server():
     user = request.environ['user_var']['username']
@@ -139,6 +155,7 @@ def kill_server():
     os.system("pkill -U " + user + " -9 java")
     os.system("pkill -U " + user + " -9 server_start")
     return jsonify({"status": "success"})
+
 
 """
     Runs a command on a Minecraft server.
@@ -150,6 +167,8 @@ def kill_server():
     Returns:
         - Nothing
 """
+
+
 @app.route('/cmd', methods=['POST'])
 def run_cmd():
     cmd = request.form.get("cmd")
@@ -157,6 +176,7 @@ def run_cmd():
         return jsonify({"status": "error", "msg": "Server is not running."})
     run_cmd_helper(cmd, request.environ['user_var']['username'])
     return jsonify({"status": "success"})
+
 
 """
     Gracefully stops a Minecraft server.
@@ -167,6 +187,8 @@ def run_cmd():
     Returns:
         - Returns JSON string indicating whether or not the server was successfully stopped.
 """
+
+
 @app.route('/stop', methods=['POST'])
 def stop_server():
     user = request.environ['user_var']['username']
@@ -175,6 +197,7 @@ def stop_server():
     run_cmd_helper("stop", user)
     os.system("pkill -U " + user + " -9 server_start")
     return jsonify({"status": "success"})
+
 
 """
     Returns power level of MC server.
@@ -185,13 +208,119 @@ def stop_server():
     Returns:
         - Returns JSON string indicating whether or not the server is on.
 """
+
+
 @app.route('/status', methods=['GET'])
 def status():
     user = request.environ['user_var']['username']
     status = server_status(user)
-    result = subprocess.run(['./memory_usage.bash', user], stdout=subprocess.PIPE)
+    result = subprocess.run(
+        ['./memory_usage.bash', user], stdout=subprocess.PIPE)
     memory_usage = result.stdout.decode('utf-8').rstrip('\n')
-    return jsonify({"status": "success", "power_level": "on" if status else "off", "memory_usage": memory_usage })
+    return jsonify({"status": "success", "power_level": "on" if status else "off", "memory_usage": memory_usage})
+
 
 if __name__ == "__main__":
     app.run(port=5001)
+
+"""
+    List every server in the database.
+
+    Args:
+        - None
+
+    Returns:
+        - JSON string containing all servers    
+"""
+@app.route('/list_all', methods=['GET'])
+def list_all():
+    user = request.environ['user_var']['username']
+    if user != "root":
+        return jsonify({"status": "error", "msg": "You must be root."})
+    c = get_db().cursor()
+    c.execute("SELECT * FROM servers")
+    result = c.fetchall()
+    return jsonify({"status": "success", "servers": result})
+
+
+"""
+    Create a new server.
+
+    Args:
+        - Takes in username: str, max_ram: str, min_ram: str, and name: str
+    Returns:
+        - JSON string indicating whether or not the server was successfully created.
+"""
+@app.route('/create', methods=['POST'])
+def create_server():
+    user = request.environ['user_var']['username']
+    if user != "root":
+        return jsonify({"status": "error", "msg": "You must be root."})
+    username = request.form.get("username")
+    if username == None:
+        return jsonify({"status": "error", "msg": "Username not specified"})
+    if username.isalnum() == False:
+        return jsonify({"status": "error", "msg": "Username must be alphanumeric"})
+    if len(username) <= 8 or len(username) >= 16:
+        return jsonify({"status": "error", "msg": "Username must be between 8 and 16 characters"})
+    
+    # Check if user exists
+    c = get_db().cursor()
+    c.execute("SELECT * FROM servers WHERE user = ?", (username,))
+    result = c.fetchall()
+    if len(result) != 0:
+        return jsonify({"status": "error", "msg": "User already exists"})
+
+    # Generate cryptographically secure 32-character alphanumeric token
+    random = secrets.SystemRandom()
+    token = ''.join(random.choice(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") for _ in range(32))
+
+    # Execute add-server.bash $username
+    result = subprocess.run(
+        ['./add-server.bash', username, token], stdout=subprocess.PIPE)
+
+    if result.returncode == 0:
+        return jsonify({"status": "success", "msg": "Server successfully created.", "token": token})
+    else:
+        return jsonify({"status": "error", "msg": "Error: " + result.stdout.decode('utf-8').rstrip('\n')})
+
+"""
+    Delete a server.
+
+    Args:
+        - Takes in username: str
+    Returns:
+        - JSON string indicating whether or not the server was successfully deleted.
+"""
+@app.route('/delete', methods=['POST'])
+def delete_server():
+    user = request.environ['user_var']['username']
+    if user != "root":
+        return jsonify({"status": "error", "msg": "You must be root."})
+    username = request.form.get("username")
+    if username == None:
+        return jsonify({"status": "error", "msg": "Username not specified"})
+    if username.isalnum() == False:
+        return jsonify({"status": "error", "msg": "Username must be alphanumeric"})
+    if len(username) <= 8 or len(username) >= 16:
+        return jsonify({"status": "error", "msg": "Username must be between 8 and 16 characters"})
+    
+    # Check if server exists in database
+    c = get_db().cursor()
+    c.execute("SELECT * FROM servers WHERE user=?", (username,))
+    result = c.fetchall()
+    if len(result) == 0:
+        return jsonify({"status": "error", "msg": "Server does not exist."})
+
+    # Execute remove-server.bash $username
+    result = subprocess.run(
+        ['./delete-server.bash', username], stdout=subprocess.PIPE)
+
+    # Delete server from database with user: $username
+    if result.returncode == 0:
+        c.execute("DELETE FROM servers WHERE user=?", (username,))
+        get_db().commit()
+        return jsonify({"status": "success"})
+    else:
+        return jsonify({"status": "error", "msg": "Error: Your server could not be deleted."})
