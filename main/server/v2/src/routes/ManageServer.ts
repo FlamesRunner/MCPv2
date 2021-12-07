@@ -14,6 +14,26 @@ import https from 'https';
 
 const router = express.Router();
 
+type ServerAction = {
+    action: "start" | "stop" | "kill" | "cmd";
+    data?: URLSearchParams;
+    server: IServer;
+}
+
+const ServerAction = ({ action, server, data = new URLSearchParams() }: ServerAction): Promise<AxiosResponse<any, any>> => {
+    const url = `https://${server.host}:5000/${action}`;
+    const options = {
+        headers: {
+            'TOKEN': server.token,
+        },
+        httpsAgent: new https.Agent({
+            rejectUnauthorized: false
+        }),
+    };
+    return axios.post(url, data, options);
+}
+
+
 const ManageServerRoutes = (models: Models) => {
     const UserModel = models.models.User.model;
     const ServerModel = models.models.Server.model;
@@ -203,12 +223,11 @@ const ManageServerRoutes = (models: Models) => {
         let server_response: AxiosResponse<any>;
         const params = new URLSearchParams();
         params.append('username', server.nickname);
-        params.append('token', node.token);
 
         try {
-            server_response = await axios.post(`https://${server.host}:5000/delete`, params, {
+            server_response = await axios.post(`https://${node.host}:5000/delete`, params, {
                 headers: {
-                    'TOKEN': server.token,
+                    'TOKEN': node.token,
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 httpsAgent: new https.Agent({
@@ -238,6 +257,256 @@ const ManageServerRoutes = (models: Models) => {
 
         return res.json({
             message: 'Server deleted'
+        });
+    });
+
+    router.post('/start', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const {
+            server_id
+        } = req.body;
+
+        if (!server_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const params = new URLSearchParams();
+        params.append('min_ram', server.parameters.min_ram.toString() + 'M');
+        params.append('max_ram', server.parameters.max_ram.toString() + 'M');
+
+        const result = await ServerAction({ server, action: 'start', data: params });
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        return res.json({
+            message: 'Server started'
+        });
+    });
+
+    router.post('/stop', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const {
+            server_id
+        } = req.body;
+
+        if (!server_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const result = await ServerAction({ server, action: 'stop' });
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        return res.json({
+            message: 'Server stopped'
+        });
+    });
+
+    router.post('/kill', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const {
+            server_id
+        } = req.body;
+
+        if (!server_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const result = await ServerAction({ server, action: 'kill' });
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        return res.json({
+            message: 'Server killed'
+        });
+    });
+
+    router.post('/execute', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const {
+            server_id,
+            command
+        } = req.body;
+
+        if (!server_id || !command) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const params = new URLSearchParams();
+        params.append('cmd', command);
+        const result = await ServerAction({ server, action: 'cmd', data: params });
+
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        return res.json({
+            message: 'Command executed'
+        });
+    });
+
+    router.get('/log/:server_id', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const server_id = req.params.server_id;
+
+        if (!server_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const result = await axios.get(`https://${server.host}:5000/log`, {
+            headers: {
+                'TOKEN': `${server.token}`
+            },
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        });
+
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        return res.json({
+            message: 'Log fetched',
+            logs: result.data.log,
         });
     });
 

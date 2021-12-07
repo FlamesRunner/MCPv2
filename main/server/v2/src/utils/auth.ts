@@ -12,7 +12,11 @@ const AuthenticationMiddleware = (req : Request, res : Response, next : NextFunc
     }
 
     // Verify token
-    const user = jwt.verify(token, process.env.JWT_SECRET) as IAuthData;
+    let user : IAuthData;
+    try {
+        user = jwt.verify(token, process.env.JWT_SECRET) as IAuthData;
+    } catch (err) {
+    }
 
     if (!user) {
         return res.status(401).json({

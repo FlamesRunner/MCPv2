@@ -104,8 +104,6 @@ const ManageNode = (models: Models) => {
             });
         }
 
-        console.log(node_connection.data);
-
         // Check if we are authenticated on the node as the 'root' user
         try {
             const node_user_data: any = node_connection.data;
