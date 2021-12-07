@@ -1,17 +1,13 @@
 import { Mongoose, Document, ObjectId } from "mongoose";
 
-interface IServer extends Document {
+interface INode extends Document {
     nickname: string;
     token: string;
     host: string;
-    parameters: {
-        max_ram: number;
-        min_ram: number;
-    };
-    node: ObjectId;
+    owner: ObjectId;
 }
 
-const ServerSchema = (mongoose: Mongoose) => {
+const NodeSchema = (mongoose: Mongoose) => {
     const schema = new mongoose.Schema({
         nickname: {
             type: String,
@@ -27,19 +23,9 @@ const ServerSchema = (mongoose: Mongoose) => {
             type: String,
             required: true
         },
-        parameters: {
-            max_ram: {
-                type: Number,
-                required: true
-            },
-            min_ram: {
-                type: Number,
-                required: true
-            }
-        },
-        node: {
+        owner: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Node",
+            ref: "User",
             required: true
         }
     });
@@ -47,4 +33,4 @@ const ServerSchema = (mongoose: Mongoose) => {
     return schema;
 }
 
-export { ServerSchema, IServer };
+export { NodeSchema, INode };

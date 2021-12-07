@@ -17,9 +17,9 @@ const UserRoutes = (models: Models) => {
         })
     });
 
-    router.post('/create', async (req : Request, res : Response) => {
+    router.post('/create', async (req: Request, res: Response) => {
         // Check if the appropriate fields are present
-        
+
         if (!req.body.username || !req.body.password || !req.body.email) {
             res.status(400).json({
                 message: 'Missing username or password'
@@ -82,8 +82,7 @@ const UserRoutes = (models: Models) => {
             username: req.body.username,
             password: hashed_password,
             email: req.body.email,
-            servers: [],
-            role: 'user'
+            servers: []
         });
 
         if (newUser) {
@@ -98,7 +97,7 @@ const UserRoutes = (models: Models) => {
         });
     });
 
-    router.post('/login', async (req : Request, res : Response) => {
+    router.post('/login', async (req: Request, res: Response) => {
         // Check if the appropriate fields are present
         if ((!req.body.username && !req.body.email) || !req.body.password) {
             return res.status(400).json({
@@ -107,7 +106,7 @@ const UserRoutes = (models: Models) => {
         }
 
         // Attempt to find the user
-        const user : any = await UserModel.findOne({
+        const user: any = await UserModel.findOne({
             $or: [
                 { username: req.body.username },
                 { email: req.body.email }
@@ -124,8 +123,7 @@ const UserRoutes = (models: Models) => {
         const token = jwt.sign({
             _id: user._id,
             username: user.username,
-            email: user.email,
-            role: user.role
+            email: user.email
         }, process.env.JWT_SECRET, {
             expiresIn: '3h'
         });

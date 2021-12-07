@@ -27,12 +27,7 @@ const UserSchema = (mongoose: Mongoose) => {
         servers: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Server'
-        }],
-        role: {
-            type: String,
-            enum: ['user', 'admin'],
-            default: 'user'
-        }
+        }]
     });
 
     return schema;

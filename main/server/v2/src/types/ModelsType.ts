@@ -1,6 +1,7 @@
 import { Model, Schema } from "mongoose";
 import { IUser } from "../models/User";
 import {IServer} from "../models/Server";
+import { INode } from "../models/Node";
 
 type Models = {
     models: {
@@ -11,7 +12,11 @@ type Models = {
         Server: {
             model: Model<IServer, any>,
             schema: Schema<any, Model<any, any, any, any>, any>,
-        },  
+        },
+        Node: {
+            model: Model<INode, any>,
+            schema: Schema<any, Model<any, any, any, any>, any>,
+        }
     }
 }
 
