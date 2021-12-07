@@ -47,7 +47,6 @@ def action_query(query, params):
 def jsonify(input: dict):
     return json.dumps(input)
 
-
 """
     Runs a command on a Minecraft server.
     
@@ -103,12 +102,30 @@ def server_status(username: str):
 def get_log():
     user = request.environ['user_var']['username']
     path = '/home/' + user + '/console.txt'
+    # Check if file exists
+    if not os.path.isfile(path):
+        return jsonify({'status': 'success', 'log': ''})
+
     f = open(path, "r")
     output = f.read()
     if server_status(user) == False:
         output = output + "\n[Server is offline]"
     return jsonify({"status": "success", "log": output})
 
+
+"""
+    Get the current user's username.
+
+    Args:
+        None
+    
+    Returns:
+        - username: The current user's username.
+"""
+@app.route('/user', methods=['GET'])
+def get_user():
+    user = request.environ['user_var']['username']
+    return jsonify({"status": "success", "username": user})
 
 """
     Starts MC server.
@@ -263,7 +280,7 @@ def create_server():
         return jsonify({"status": "error", "msg": "Username must be alphanumeric"})
     if len(username) <= 8 or len(username) >= 16:
         return jsonify({"status": "error", "msg": "Username must be between 8 and 16 characters"})
-    
+
     # Check if user exists
     c = get_db().cursor()
     c.execute("SELECT * FROM servers WHERE user = ?", (username,))
