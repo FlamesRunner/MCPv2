@@ -10,6 +10,10 @@ dotenv.config();
 import {UserSchema, IUser} from "./models/User";
 import UserRoutes from "./routes/User";
 
+// Server model and routes
+import {ServerSchema, IServer} from "./models/Server";
+import ServerRoutes from "./routes/ManageServer";
+
 const PORT = process.env.PORT || 3001;
 const mongodb_uri = process.env.MONGO_URI || 'mongodb://localhost/mcpv2-api';
 const app = express();
@@ -20,13 +24,19 @@ mongoose.connect(mongodb_uri);
 function get_models (mongoose: Mongoose): Models {
     const userSchema = UserSchema(mongoose);
     const userModel = mongoose.model<IUser>('User', userSchema);
+    const serverSchema = ServerSchema(mongoose);
+    const serverModel = mongoose.model<IServer>('Server', serverSchema);
 
     return {
         models: {
             User: {
                 model: userModel,
                 schema: userSchema,
-            }
+            },
+            Server: {
+                model: serverModel,
+                schema: serverSchema,
+            },
         },
     };
 }
@@ -48,4 +58,7 @@ mongoose.connection.on('open', () => {
 
     const UserRouter = UserRoutes(models);
     app.use('/api/v1/user', UserRouter);
+
+    const ServerRouter = ServerRoutes(models);
+    app.use('/api/v1/server', ServerRouter);
 });

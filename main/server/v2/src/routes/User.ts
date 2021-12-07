@@ -4,6 +4,7 @@ import { Connection, Error } from 'mongoose';
 import { IUser } from '../models/User';
 import { Models } from '../types/ModelsType';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -94,6 +95,44 @@ const UserRoutes = (models: Models) => {
 
         res.status(500).json({
             message: 'Error creating user'
+        });
+    });
+
+    router.post('/login', async (req : Request, res : Response) => {
+        // Check if the appropriate fields are present
+        if ((!req.body.username && !req.body.email) || !req.body.password) {
+            return res.status(400).json({
+                message: 'Missing username/email and password'
+            });
+        }
+
+        // Attempt to find the user
+        const user : any = await UserModel.findOne({
+            $or: [
+                { username: req.body.username },
+                { email: req.body.email }
+            ],
+        });
+
+        if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
+            return res.status(401).json({
+                message: 'Invalid username/email or password'
+            });
+        }
+
+        // Generate JWT
+        const token = jwt.sign({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role
+        }, process.env.JWT_SECRET, {
+            expiresIn: '3h'
+        });
+
+        res.json({
+            message: 'Login successful',
+            token: token
         });
     });
     return router;
