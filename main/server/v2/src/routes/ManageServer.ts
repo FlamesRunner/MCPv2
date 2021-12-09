@@ -151,7 +151,7 @@ const ManageServerRoutes = (models: Models) => {
         }
 
         const server = new ServerModel({
-            nickname: server_name,
+            nickname: server_name.toLowerCase(),
             host: node.host,
             token: server_response.data.token,
             parameters: {
@@ -507,6 +507,121 @@ const ManageServerRoutes = (models: Models) => {
         return res.json({
             message: 'Log fetched',
             logs: result.data.log,
+        });
+    });
+
+    router.get('/status/:server_id', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const server_id = req.params.server_id;
+
+        if (!server_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const result = await axios.get(`https://${server.host}:5000/status`, {
+            headers: {
+                'TOKEN': `${server.token}`
+            },
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        });
+
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        server.token = "";
+
+        return res.json({
+            message: 'Server status retrieved',
+            status: result.data,
+            server: server
+        });
+    });
+
+    
+    router.get('/sftp/:server_id', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Check if the appropriate fields are present
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const server_id = req.params.server_id;
+
+        if (!server_id) {
+            return res.status(400).json({
+                message: 'Missing required fields'
+            });
+        }
+
+        // Check if user owns the server
+        if (user.servers.indexOf(server_id) === -1) {
+            return res.status(400).json({
+                message: 'You do not own this server'
+            });
+        }
+
+        const server: IServer = await ServerModel.findById(server_id);
+        if (!server) {
+            return res.status(400).json({
+                message: 'Server not found'
+            });
+        }
+
+        const result = await axios.get(`https://${server.host}:5000/sftp`, {
+            headers: {
+                'TOKEN': `${server.token}`
+            },
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        });
+
+        if (result.status !== 200) {
+            return res.status(500).json({
+                message: result.data.msg
+            });
+        }
+
+        server.token = "";
+
+        return res.json({
+            message: 'SFTP password generated',
+            username: server.nickname,
+            password: result.data.password,
         });
     });
 

@@ -26,5 +26,7 @@ fi
 useradd -m -k /var/local/mcp-service/mcp-skel $1
 chown root:root /home/$1/server_start
 chmod 755 /home/$1/server_start
+chown root:root /home/$1
+usermod -G mcpuser $1
 sqlite3 /var/local/mcp-service/daemon/node.db "INSERT INTO servers (token, user) VALUES (\"$2\", \"$1\")"
 set -e 0

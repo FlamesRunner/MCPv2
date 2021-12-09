@@ -341,3 +341,26 @@ def delete_server():
         return jsonify({"status": "success"})
     else:
         return jsonify({"status": "error", "msg": "Error: Your server could not be deleted."})
+
+""" 
+    Generates SFTP password for a server.
+
+    Args:
+        - None
+    Returns:
+        - JSON string containing SFTP password if successful, otherwise error message.
+"""
+@app.route('/sftp', methods=['GET'])
+def sftp():
+    user = request.environ['user_var']['username']
+    random = secrets.SystemRandom()
+    token = ''.join(random.choice(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") for _ in range(32))
+
+    # Change system password for user
+    result = subprocess.run(
+        ['./change-password.bash', user, token], stdout=subprocess.PIPE)
+    
+    if result.returncode == 0:
+        return jsonify({"status": "success", "msg": "SFTP password successfully generated.", "password": token})
+    return jsonify({"status": "error", "msg": "SFTP password could not be generated."})

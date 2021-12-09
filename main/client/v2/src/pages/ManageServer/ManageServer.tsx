@@ -201,6 +201,9 @@ const ManageServer = (props: any) => {
 	return (
 		<div className="serverManage">
 			<FileManager
+				token={auth.token}
+				serverId={params.id || ""}
+				serverHostname={serverProperties.host}
 				show={showFileManager}
 				close={() => {
 					setShowFileManager(false);
@@ -232,6 +235,7 @@ const ManageServer = (props: any) => {
 									executingAction ? "bg-gray-300 cursor-not-allowed" : ""
 								} bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
+                                    if (executingAction) return;
 									setExecutingAction(true);
 									executeAction("start", "", serverProperties, auth.token);
 								}}
@@ -253,6 +257,7 @@ const ManageServer = (props: any) => {
 									executingAction ? "bg-gray-300 cursor-not-allowed" : ""
 								} bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
+                                    if (executingAction) return;
 									setExecutingAction(true);
 									executeAction("stop", "", serverProperties, auth.token);
 								}}
@@ -274,6 +279,7 @@ const ManageServer = (props: any) => {
 									executingAction ? "bg-gray-300 cursor-not-allowed" : ""
 								} bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
+                                    if (executingAction) return;
 									setExecutingAction(true);
 									executeAction("kill", "", serverProperties, auth.token);
 								}}
@@ -291,12 +297,12 @@ const ManageServer = (props: any) => {
 							<div
 								className="bg-green-500 h-6 w-full rounded-full"
 								style={{
-									width: `${Math.min(
+									width: `${Math.max(Math.min(
 										(parseInt(serverStatus.memory_usage) /
 											serverProperties.parameters.max_ram) *
 											100,
 										100
-									)}%`,
+									), 3)}%`,
 									transition: "width 2s ease-in-out",
 								}}
 							/>
@@ -367,6 +373,7 @@ const ManageServer = (props: any) => {
 						<form
 							onSubmit={(e) => {
 								e.preventDefault();
+                                if (executingAction) return;
 								executeAction(
 									"execute",
 									consoleInput,

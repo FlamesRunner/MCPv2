@@ -23,7 +23,7 @@ fi
 
 echo ">>> Installing prerequisites..."
 sleep 2
-apt-get install -y git python3.7 python3-pip sqlite3 curl wget python3-flask nginx openssl openjdk-11-jre
+apt-get install -y git python3 python3-pip sqlite3 curl wget python3-flask nginx openssl openjdk-11-jre openssh-server
 
 echo ">>> Installing build tools..."
 sleep 2
@@ -57,6 +57,7 @@ mkdir /var/local/mcp-service
 cp -R ~/mcp-skel /var/local/mcp-service/mcp-skel
 cp -R ~/mcp-node-files/scripts/Daemon /var/local/mcp-service/daemon
 cp ~/mcp-node-files/scripts/add-server.bash ~
+chmod +x /var/local/mcp-service/daemon/*.bash
 
 echo ">>> Installing Flask..."
 sleep 2
@@ -92,6 +93,19 @@ echo ">>> Enabling startup execution..."
 sleep 2
 systemctl enable mcp-node.service
 
+echo ">>> Configuring OpenSSH to allow jailed SFTP for users..."
+sleep 2
+echo <<EOT > /etc/ssh/sshd_config.d/mcp-jailed-sftp.conf
+Match Group mcpuser
+	ForceCommand internal-sftp
+	ChrootDirectory /home/%u
+	AllowTCPForwarding no
+	X11Forwarding no 
+EOT
+
+echo ">>> Adding jailed SFTP group..."
+sleep 2
+groupadd mcpuser
 
 echo ">>> Generating SSL certificates..."
 echo ">>> When prompted for the FQDN, enter your public IP address."
@@ -132,6 +146,7 @@ systemctl restart nginx
 echo ">>> Starting daemon..."
 sleep 2
 systemctl start mcp-node
+systemctl restart ssh
 
 echo " "
 echo " "

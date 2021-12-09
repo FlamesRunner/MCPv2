@@ -1,12 +1,45 @@
+import axios, { AxiosError } from "axios";
 import React from "react";
 
 type FileManagerProps = {
 	show: boolean;
 	close: () => void;
+	serverId: string;
+	token: string;
+	serverHostname: string;
 };
 
-const FileManager = ({ show, close }: FileManagerProps) => {
+const FileManager = ({ show, close, serverId, token, serverHostname }: FileManagerProps) => {
+	const [processing, setProcessing] = React.useState(false);
+	const [password, setPassword] = React.useState("");
+	const [username, setUsername] = React.useState("");
+	const [message, setMessage] = React.useState("");
+
+	const generateCredentials = async () => {
+		setTimeout(() => {
+			axios
+				.get(
+					`${process.env.REACT_APP_API_HOST}/api/v1/server/sftp/${serverId}`,
+					{
+						headers: {
+							Authorization: `${token}`,
+						},
+					}
+				)
+				.then((response) => {
+					setProcessing(false);
+					setPassword(response.data.password);
+					setUsername(response.data.username);
+				})
+				.catch((error: AxiosError) => {
+					setProcessing(false);
+					setMessage(error.response?.data.message || "An error occurred");
+				});
+		}, 1000);
+	};
+
 	if (!show) return <></>;
+
 	return (
 		<div className="fileManager">
 			{/* Show file manager modal on the centre of the screen (TailwindCSS) */}
@@ -22,7 +55,7 @@ const FileManager = ({ show, close }: FileManagerProps) => {
 						zIndex: "2",
 					}}
 				>
-					<div className="md:w-1/2 md:h-1/2 h-full w-full md:m-8 bg-white md:rounded-md md:p-8 p-4 relative">
+					<div className="md:w-1/2 md:h-auto h-full w-full md:m-8 bg-white md:rounded-md md:p-8 p-4 relative">
 						<h1 className="text-2xl mb-2">File access</h1>
 						<div
 							id="closeFileManager"
@@ -43,8 +76,55 @@ const FileManager = ({ show, close }: FileManagerProps) => {
 							You may generate a set of SFTP credentials to access your server
 							files. Please note that generated credentials are not stored, so
 							you must re-generate them if you lose them. You may do this at any
-							time.
+							time, but generating credentials will invalidate any existing ones.
 						</p>
+						{/* Status message */}
+						{(message || password) && (
+							<div
+								className={`${message ? "bg-red-100 border-red-500 text-red-700" : "bg-blue-100 border-blue-500 text-blue-700"} border-l-4  transition-all relative mt-6 mb-4`}
+								style={{
+									opacity: (message || password) && !processing ? 1 : 0,
+									visibility: (message || password) && !processing ? "visible" : "hidden",
+									transition:
+										"opacity 0.5s ease-in-out, visiblity 0.5s ease-in-out",
+									padding: (message || password) && !processing ? "1rem" : "0",
+								}}
+							>
+								{/* Close */}
+								<button
+									className="absolute top-0 right-3 p-2 text-2xl"
+									onClick={() => setMessage("")}
+								>
+									×
+								</button>
+
+								<p className="font-bold">{message ? "Error" : "Info"}</p>
+								<p>{message ? message : (
+									<>
+										<span className="font-bold">Host:</span> {serverHostname}
+										<br />
+										<span className="font-bold">Username: </span> {username}
+										<br />
+										<span className="font-bold">Password: </span> {password}
+									</>
+								)}</p>
+							</div>
+						)}
+						<br />
+						{/* Generate credentials button */}
+						<button
+							className={`bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded ${
+								processing ? "opacity-50 cursor-not-allowed" : ""
+							}`}
+							disabled={processing}
+							onClick={() => {
+								if (processing) return;
+								setProcessing(true);
+								generateCredentials();
+							}}
+						>
+							{processing ? "Generating..." : "Generate credentials"}
+						</button>
 					</div>
 				</div>
 				<div className="absolute inset-0 bg-gray-500 opacity-75 flex"></div>
