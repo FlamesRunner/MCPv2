@@ -48,6 +48,8 @@ const Servers = () => {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.token, loading]);
 
+	clearInterval();
+
 	return (
 		<div className="servers">
 			<div className="full-page w-full px-8 py-6 bg-gray-100">

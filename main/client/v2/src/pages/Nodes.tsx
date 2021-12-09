@@ -33,7 +33,6 @@ const Nodes = () => {
 			}).then((res) => {
 				if (res.status === 200) {
 					res.json().then((data) => {
-						console.log(data.nodes);
 						setServerNodes(data.nodes);
 					});
 				}
@@ -41,6 +40,8 @@ const Nodes = () => {
 		}
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.token, loading]);
+
+	clearInterval();
 
 	return (
 		<div className="nodes">

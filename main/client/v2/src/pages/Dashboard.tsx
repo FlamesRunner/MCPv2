@@ -14,9 +14,11 @@ const Dashboard = () => {
 		});
 	});
     
+	clearInterval();
+
 	return (
 		<div className="dashboard">
-			<div className="full-page w-full px-6 py-4 bg-gray-100">
+			<div className="full-page w-full px-8 py-6 bg-gray-100">
 				<h1 className="text-4xl mb-2">Dashboard</h1>
 				<h3 className="text-xl mb-4">Welcome back, {auth.user.username}.</h3>
 				{/* Highlight cards, flat UI with TailwindCSS */}
@@ -39,9 +41,9 @@ const Dashboard = () => {
 					<div className="bg-white shadow-md p-4 h-40">
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-xl font-bold">Servers</h3>
-							<button className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded">
+							<Link to="/dashboard/servers/add" className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded">
 								Add
-							</button>
+							</Link>
 						</div>
 						<hr />
 						<div className="mt-4">

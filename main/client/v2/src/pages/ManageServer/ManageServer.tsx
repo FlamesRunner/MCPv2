@@ -54,14 +54,9 @@ const executeAction = async (
 			Authorization: `${token}`,
 		},
 		body: JSON.stringify({ server_id: server._id, command }),
-	})
-		.then((res) => res.json())
-		.then((data) => {
-			console.log(data);
-		})
-		.catch((err) => {
-			console.log(err);
-		});
+	}).catch((err) => {
+		console.log(err);
+	});
 };
 
 const ManageServer = (props: any) => {
@@ -94,7 +89,7 @@ const ManageServer = (props: any) => {
 
 	const [consoleLog, setConsoleLog] = React.useState<string[]>([]);
 
-    const [showFileManager, setShowFileManager] = React.useState(false);
+	const [showFileManager, setShowFileManager] = React.useState(false);
 
 	const [memoryUsageData, setMemoryUsageData] = React.useState<
 		MemoryUsageDataPoint[]
@@ -168,9 +163,10 @@ const ManageServer = (props: any) => {
 
 				setMemoryUsageData([]);
 				setMemoryUsageData(memoryUsageDataPoints);
+				setExecutingAction(false);
 			})
 			.catch((e: any) => {
-				console.error(e);
+				navigate("/dashboard/servers");
 			})
 			.finally(() => {
 				setLoading(false);
@@ -204,9 +200,12 @@ const ManageServer = (props: any) => {
 
 	return (
 		<div className="serverManage">
-            <FileManager show={showFileManager} close={() => {
-                setShowFileManager(false);
-            }} />
+			<FileManager
+				show={showFileManager}
+				close={() => {
+					setShowFileManager(false);
+				}}
+			/>
 			<div className="full-page w-full px-8 py-6 bg-gray-100">
 				<h1 className="text-4xl mb-8">
 					Managing: {serverProperties.nickname} ({serverProperties.host})
@@ -234,14 +233,7 @@ const ManageServer = (props: any) => {
 								} bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
 									setExecutingAction(true);
-									executeAction(
-										"start",
-										"",
-										serverProperties,
-										auth.token
-									).finally(() => {
-										setExecutingAction(false);
-									});
+									executeAction("start", "", serverProperties, auth.token);
 								}}
 							>
 								Start
@@ -262,14 +254,7 @@ const ManageServer = (props: any) => {
 								} bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
 									setExecutingAction(true);
-									executeAction(
-										"stop",
-										"",
-										serverProperties,
-										auth.token
-									).finally(() => {
-										setExecutingAction(false);
-									});
+									executeAction("stop", "", serverProperties, auth.token);
 								}}
 							>
 								Stop
@@ -290,14 +275,7 @@ const ManageServer = (props: any) => {
 								} bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
 									setExecutingAction(true);
-									executeAction(
-										"kill",
-										"",
-										serverProperties,
-										auth.token
-									).finally(() => {
-										setExecutingAction(false);
-									});
+									executeAction("kill", "", serverProperties, auth.token);
 								}}
 							>
 								Kill
@@ -308,7 +286,7 @@ const ManageServer = (props: any) => {
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="bg-white shadow-md rounded px-8 py-6">
-						<h2 className="text-xl mb-2">Memory Usage</h2>
+						<h2 className="text-xl mb-2">Current Memory Usage</h2>
 						<div className="bg-gray-200 h-6 w-full rounded-full">
 							<div
 								className="bg-green-500 h-6 w-full rounded-full"
@@ -324,7 +302,7 @@ const ManageServer = (props: any) => {
 							/>
 						</div>
 						<div
-                            className="hidden md:block"
+							className="hidden md:block"
 							style={{
 								paddingTop: "30px",
 							}}
@@ -364,6 +342,8 @@ const ManageServer = (props: any) => {
 										dataKey="usage"
 										name="Usage"
 										stroke="#8884d8"
+										dot={false}
+										strokeWidth={2}
 									/>
 								</LineChart>
 							</ResponsiveContainer>
@@ -372,7 +352,7 @@ const ManageServer = (props: any) => {
 					<div className="bg-white shadow-md rounded px-8 py-6">
 						<h3 className="text-xl mb-2">Console</h3>
 						<pre
-							className="bg-gray-200 w-full p-2"
+							className="bg-gray-800 text-green-600 w-full p-2"
 							style={{
 								height: "350px",
 								overflowX: "hidden",
@@ -397,22 +377,36 @@ const ManageServer = (props: any) => {
 								});
 							}}
 						>
-							<input
-								type="text"
-								className="w-full p-2 focus:outline-none border-2 border-gray-200"
-								onChange={(e) => {
-									setConsoleInput(e.target.value);
-								}}
-								value={consoleInput}
-							/>
+							<div className="flex items-center">
+								<input
+									type="text"
+									className="w-full p-2 focus:outline-none bg-gray-200"
+									onChange={(e) => {
+										setConsoleInput(e.target.value);
+									}}
+									placeholder="Enter command"
+									value={consoleInput}
+								/>
+								<button
+									type="submit"
+									className="py-2 px-4 bg-green-500 text-white focus:outline-none"
+								>
+									Execute
+								</button>
+							</div>
 						</form>
 					</div>
 				</div>
 				{/* File manager */}
 				<div className="w-full mt-4">
 					<div className="bg-white shadow-md rounded px-8 py-6">
-						<h3 className="text-xl mb-2">File Manager</h3>
-                        <button onClick={() => setShowFileManager(true)} className="rounded-md px-4 py-2 bg-blue-400 hover:bg-blue-600 transition-all text-white">Open</button>
+						<h3 className="text-xl mb-2">File access</h3>
+						<button
+							onClick={() => setShowFileManager(true)}
+							className="rounded-md px-4 py-2 bg-blue-400 hover:bg-blue-600 transition-all text-white"
+						>
+							Open
+						</button>
 					</div>
 				</div>
 			</div>
