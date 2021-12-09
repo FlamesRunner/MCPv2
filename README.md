@@ -3,7 +3,7 @@ A Minecraft server control panel
 
 # Screenshots
 
-![image](https://user-images.githubusercontent.com/6465362/145361080-f8a7a968-fc02-4c09-8c36-c20802df99a1.png)
+![image](https://user-images.githubusercontent.com/6465362/145489133-083921e3-4129-4cca-9c9b-4a8870ca2e27.png)
 
 # Development
 
