@@ -355,7 +355,7 @@ def sftp():
     user = request.environ['user_var']['username']
     random = secrets.SystemRandom()
     token = ''.join(random.choice(
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") for _ in range(32))
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") for _ in range(10))
 
     # Change system password for user
     result = subprocess.run(

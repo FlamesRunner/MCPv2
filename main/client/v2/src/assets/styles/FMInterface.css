@@ -1,0 +1,9 @@
+.file-listing {
+    max-height: 40vh;
+}
+
+@media screen and (max-width: 768px) {
+    .file-listing {
+        max-height: 65vh;
+    }
+}

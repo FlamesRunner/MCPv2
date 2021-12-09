@@ -61,7 +61,7 @@ const Nodes = () => {
 					}}
 				>
 					{serverNodes.map((currentNode) => (
-						<div className="mt-4 w-full rounded-md bg-white shadow-lg">
+						<div className="mt-4 w-full rounded-md bg-white shadow-lg" key={currentNode.host + currentNode.nickname + currentNode.owner}>
 							<div className="flex flex-row items-center justify-between px-4 py-4">
 								<div>{currentNode.nickname} ({currentNode.host})</div>
 								<div onClick={() => {

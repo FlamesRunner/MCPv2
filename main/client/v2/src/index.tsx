@@ -7,15 +7,16 @@ import { BrowserRouter } from "react-router-dom";
 import AuthProvider from "./provider/AuthProvider";
 
 ReactDOM.render(
-  <React.StrictMode>
-    {/* React router initialization */}
-    <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
-  document.getElementById("root")
+	<React.StrictMode>
+		{/* React router initialization */}
+		<BrowserRouter>
+			<AuthProvider>
+
+					<App />
+			</AuthProvider>
+		</BrowserRouter>
+	</React.StrictMode>,
+	document.getElementById("root")
 );
 
 // If you want to start measuring performance in your app, pass a function

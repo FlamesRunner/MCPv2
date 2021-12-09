@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -12,6 +12,7 @@ import {
 	Legend,
 } from "recharts";
 import moment from "moment";
+import IntervalContext from "../../context/IntervalContext";
 import FileManager from "../../components/FileManager";
 
 type IServerStatus = {
@@ -90,6 +91,8 @@ const ManageServer = (props: any) => {
 	const [consoleLog, setConsoleLog] = React.useState<string[]>([]);
 
 	const [showFileManager, setShowFileManager] = React.useState(false);
+
+	const intervals = useContext(IntervalContext);
 
 	const [memoryUsageData, setMemoryUsageData] = React.useState<
 		MemoryUsageDataPoint[]
@@ -188,12 +191,16 @@ const ManageServer = (props: any) => {
 			// Fetch available nodes
 			setLoading(false);
 			getServerStatus();
-			setInterval(() => {
-				getServerStatus();
-			}, 5000);
-			setInterval(() => {
-				getConsoleLog();
-			}, 2000);
+			intervals.addInterval(
+				setInterval(() => {
+					getServerStatus();
+				}, 5000)
+			);
+			intervals.addInterval(
+				setInterval(() => {
+					getConsoleLog();
+				}, 2000)
+			);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth.token, params.id, loading]);
@@ -215,7 +222,7 @@ const ManageServer = (props: any) => {
 				</h1>
 
 				{/* Show server actions */}
-				<div className="bg-white w-full shadow-lg mb-4 p-8 rounded-md">
+				<div className="bg-white w-full shadow-lg mb-4 p-4 rounded-md">
 					<h3 className="text-xl mb-4">Server Actions</h3>
 					<div className="flex flex-row justify-between">
 						<div className="flex flex-row">
@@ -235,7 +242,7 @@ const ManageServer = (props: any) => {
 									executingAction ? "bg-gray-300 cursor-not-allowed" : ""
 								} bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
-                                    if (executingAction) return;
+									if (executingAction) return;
 									setExecutingAction(true);
 									executeAction("start", "", serverProperties, auth.token);
 								}}
@@ -257,7 +264,7 @@ const ManageServer = (props: any) => {
 									executingAction ? "bg-gray-300 cursor-not-allowed" : ""
 								} bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
-                                    if (executingAction) return;
+									if (executingAction) return;
 									setExecutingAction(true);
 									executeAction("stop", "", serverProperties, auth.token);
 								}}
@@ -279,7 +286,7 @@ const ManageServer = (props: any) => {
 									executingAction ? "bg-gray-300 cursor-not-allowed" : ""
 								} bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded mr-2`}
 								onClick={() => {
-                                    if (executingAction) return;
+									if (executingAction) return;
 									setExecutingAction(true);
 									executeAction("kill", "", serverProperties, auth.token);
 								}}
@@ -290,19 +297,24 @@ const ManageServer = (props: any) => {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<div className="bg-white shadow-md rounded px-8 py-6">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{
+					height: "480px",
+				}}>
+					<div className="bg-white shadow-md rounded px-4 py-4">
 						<h2 className="text-xl mb-2">Current Memory Usage</h2>
 						<div className="bg-gray-200 h-6 w-full rounded-full">
 							<div
 								className="bg-green-500 h-6 w-full rounded-full"
 								style={{
-									width: `${Math.max(Math.min(
-										(parseInt(serverStatus.memory_usage) /
-											serverProperties.parameters.max_ram) *
-											100,
-										100
-									), 3)}%`,
+									width: `${Math.max(
+										Math.min(
+											(parseInt(serverStatus.memory_usage) /
+												serverProperties.parameters.max_ram) *
+												100,
+											100
+										),
+										3
+									)}%`,
 									transition: "width 2s ease-in-out",
 								}}
 							/>
@@ -355,12 +367,12 @@ const ManageServer = (props: any) => {
 							</ResponsiveContainer>
 						</div>
 					</div>
-					<div className="bg-white shadow-md rounded px-8 py-6">
-						<h3 className="text-xl mb-2">Console</h3>
+					<div className="w-full flex flex-col" style={{
+						height: "480px",
+					}}>
 						<pre
-							className="bg-gray-800 text-green-600 w-full p-2"
+							className="bg-gray-800 text-green-600 w-full p-2 h-full rounded-t-md"
 							style={{
-								height: "350px",
 								overflowX: "hidden",
 								overflowY: "auto",
 								wordBreak: "break-all",
@@ -373,7 +385,7 @@ const ManageServer = (props: any) => {
 						<form
 							onSubmit={(e) => {
 								e.preventDefault();
-                                if (executingAction) return;
+								if (executingAction) return;
 								executeAction(
 									"execute",
 									consoleInput,
@@ -388,6 +400,9 @@ const ManageServer = (props: any) => {
 								<input
 									type="text"
 									className="w-full p-2 focus:outline-none bg-gray-200"
+									style={{
+										borderBottomLeftRadius: "6px",
+									}}
 									onChange={(e) => {
 										setConsoleInput(e.target.value);
 									}}
@@ -397,6 +412,9 @@ const ManageServer = (props: any) => {
 								<button
 									type="submit"
 									className="py-2 px-4 bg-green-500 text-white focus:outline-none"
+									style={{
+										borderBottomRightRadius: "6px",
+									}}
 								>
 									Execute
 								</button>
@@ -406,7 +424,7 @@ const ManageServer = (props: any) => {
 				</div>
 				{/* File manager */}
 				<div className="w-full mt-4">
-					<div className="bg-white shadow-md rounded px-8 py-6">
+					<div className="bg-white shadow-md rounded p-4">
 						<h3 className="text-xl mb-2">File access</h3>
 						<button
 							onClick={() => setShowFileManager(true)}
@@ -417,6 +435,13 @@ const ManageServer = (props: any) => {
 					</div>
 				</div>
 			</div>
+			<style>
+				{`
+					html {
+						overflow-y: ${showFileManager ? "hidden" : "scroll"};
+					}
+				`}
+			</style>
 		</div>
 	);
 };

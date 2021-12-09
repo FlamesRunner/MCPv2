@@ -17,6 +17,9 @@ import ServerRoutes from "./routes/ManageServer";
 import {NodeSchema, INode} from "./models/Node";
 import NodeRoutes from "./routes/ManageNode";
 
+// SFTP routes
+import SFTPRoutes from "./routes/SFTPClient";
+
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
@@ -55,11 +58,12 @@ function get_models (mongoose: Mongoose): Models {
 mongoose.connection.on('open', () => {
     // Define models
     const models : Models = get_models(mongoose);
-
     app.use(cors({
         origin: process.env.FRONTEND_ORIGIN || '*',
     }));
+
     app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true}));
 
     app.listen(PORT, () => {
         console.log(`MCPv2 API server running on port ${PORT}`);
@@ -77,4 +81,7 @@ mongoose.connection.on('open', () => {
 
     const NodeRouter = NodeRoutes(models);
     app.use('/api/v1/node', NodeRouter);
+
+    const SFTPRouter = SFTPRoutes();
+    app.use('/api/v1/sftp', SFTPRouter);
 });

@@ -68,7 +68,7 @@ const Servers = () => {
 					}}
 				>
 					{servers.map((server) => (
-						<div className="mt-4 w-full rounded-md bg-white shadow-lg">
+						<div className="mt-4 w-full rounded-md bg-white shadow-lg" key={server._id}>
 							<div className="flex flex-row items-center justify-between px-4 py-4">
 								<div>{server.nickname} ({server.host})</div>
 								<Link to={`/dashboard/servers/manage/${server._id}`}>Manage</Link>
