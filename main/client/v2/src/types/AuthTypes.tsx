@@ -6,7 +6,7 @@ interface IUser {
 
 interface IAuthContext {
     user: IUser;
-    token: String;
+    token: string;
     expiresAt: Number;
     login: (user: string, token: string) => Promise<IAuthState>;
     signOut: () => Promise<void>;
