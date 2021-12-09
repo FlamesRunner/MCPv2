@@ -1,12 +1,13 @@
 # MCPv2
 A Minecraft server control panel
 
-# Development timeline
-A installable version is expected to be complete by the end of May.
+# Screenshots
 
-# Demo video
+![image](https://user-images.githubusercontent.com/6465362/145361080-f8a7a968-fc02-4c09-8c36-c20802df99a1.png)
 
-https://flamescdn.b-cdn.net/mcpv2_demo.mp4
+# Development
+
+Version 2.1 is currently being developed. It is expected to be ready for installation by the end of December 2021.
 
 # Attribution, credits and licensing
 
