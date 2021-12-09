@@ -4,7 +4,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import { Models } from "./types/ModelsType";
-dotenv.config();
 
 // User model and routes
 import {UserSchema, IUser} from "./models/User";
@@ -17,6 +16,8 @@ import ServerRoutes from "./routes/ManageServer";
 // Node model and routes
 import {NodeSchema, INode} from "./models/Node";
 import NodeRoutes from "./routes/ManageNode";
+
+dotenv.config();
 
 const PORT = process.env.PORT || 3001;
 const mongodb_uri = process.env.MONGO_URI || 'mongodb://localhost/mcpv2-api';
@@ -55,7 +56,9 @@ mongoose.connection.on('open', () => {
     // Define models
     const models : Models = get_models(mongoose);
 
-    app.use(cors());
+    app.use(cors({
+        origin: process.env.FRONTEND_ORIGIN || '*',
+    }));
     app.use(bodyParser.json());
 
     app.listen(PORT, () => {

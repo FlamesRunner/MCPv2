@@ -4,9 +4,17 @@ import { Connection, Error } from 'mongoose';
 import { IUser } from '../models/User';
 import { Models } from '../types/ModelsType';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const router = express.Router();
+
+type AuthData = {
+    _id: string,
+    username: string,
+    email: string
+    iat: number,
+    exp: number
+}
 
 const UserRoutes = (models: Models) => {
     const UserModel = models.models.User.model;
@@ -87,7 +95,17 @@ const UserRoutes = (models: Models) => {
 
         if (newUser) {
             res.json({
-                message: 'User created successfully'
+                message: 'User created successfully',
+                user: newUser,
+                token: jwt.sign({
+                    _id: newUser._id,
+                    username: newUser.username,
+                    email: newUser.email
+                }, process.env.JWT_SECRET,
+                    {
+                        expiresIn: '3h'
+                    }),
+                expiresAt: new Date(Date.now() + (3 * 60 * 60 * 1000)).getTime()
             });
             return;
         }
@@ -130,9 +148,69 @@ const UserRoutes = (models: Models) => {
 
         res.json({
             message: 'Login successful',
-            token: token
+            token: token,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email
+            },
+            expiresAt: new Date(Date.now() + (3 * 60 * 60 * 1000)).getTime()
         });
     });
+
+    router.get('/refresh', async (req: Request, res: Response) => {
+        const token = req.headers.authorization;
+
+        if (!token) {
+            return res.status(401).json({
+                message: 'No token provided'
+            });
+        }
+
+        try {
+            jwt.verify(token, process.env.JWT_SECRET, async (err: Error, decoded: AuthData) => {
+                if (err) {
+                    return res.status(401).json({
+                        message: 'Invalid token'
+                    });
+                }
+
+                const user = await UserModel.findOne({
+                    _id: decoded._id
+                });
+
+                if (!user) {
+                    return res.status(401).json({
+                        message: 'Invalid token'
+                    });
+                }
+
+                const token = jwt.sign({
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email
+                }, process.env.JWT_SECRET, {
+                    expiresIn: '3h'
+                });
+
+                res.json({
+                    message: 'Token refreshed',
+                    token: token,
+                    user: {
+                        _id: user._id,
+                        username: user.username,
+                        email: user.email
+                    },
+                    expiresAt: new Date(Date.now() + (3 * 60 * 60 * 1000)).getTime()
+                });
+            })
+        } catch (err) {
+            res.status(500).json({
+                message: 'Error refreshing token'
+            });
+        }
+    });
+
     return router;
 }
 

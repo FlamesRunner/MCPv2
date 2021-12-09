@@ -69,7 +69,7 @@ const ManageNode = (models: Models) => {
         }
 
         // Check if the nickname is valid
-        if (req.body.nickname && ((req.body.nickname.length > 32 || req.body.nickname.length < 6) || !req.body.nickname.search(/^[a-zA-Z0-9-_.]+$/))) {
+        if (req.body.nickname && ((req.body.nickname.length > 32 || req.body.nickname.length < 6) || !req.body.nickname.match(/^[a-z\d\-_.\s]+$/i))) {
             return res.status(400).json({
                 message: 'Invalid nickname. It must be between 6 and 32 characters long, and can only contain letters, numbers, dashes, underscores and periods.'
             });

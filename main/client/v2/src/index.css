@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Readex+Pro&display=swap');
+
+.full-page {
+    min-height: calc(100vh - 80px);
+}
+
+html {
+    font-family: 'Readex Pro', sans-serif;
+}
