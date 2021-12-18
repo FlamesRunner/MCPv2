@@ -1,10 +1,7 @@
-import axios, { AxiosResponse } from "axios";
-import React, {
-	ChangeEvent,
-	useEffect,
-	useState,
-} from "react";
+import axios, { Axios, AxiosResponse } from "axios";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import "../assets/styles/FMInterface.css";
+import HomeIcon from "../assets/images/home.svg";
 
 type FMProps = {
 	host: string;
@@ -109,6 +106,7 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 	const [loading, setLoading] = useState<boolean>(true);
 	const [uploading, setUploading] = useState<string>("");
 	const [selectedFile, setSelectedFile] = useState<string>("");
+	const [uploadProgress, setUploadProgress] = useState<number>(0);
 	useEffect(() => {
 		// Get the file listing
 		axios
@@ -137,7 +135,7 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 			.finally(() => {
 				setLoading(false);
 			});
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [loading, currentPath, selectedFile]);
 
 	return (
@@ -222,26 +220,104 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 														"Content-Type": "multipart/form-data",
 														Authorization: token,
 													},
+													onUploadProgress: (progressEvent: ProgressEvent) => {
+														const percentCompleted = Math.round(
+															(progressEvent.loaded * 100) / progressEvent.total
+														);
+
+														if (percentCompleted === 100) {
+															setTimeout(() => {
+																setUploadProgress(0);
+																setUploading("");
+																setLoading(true);
+															}, 1000);
+														}
+
+														setUploadProgress(percentCompleted);
+													},
 												}
 											)
 											.catch((err) => {
 												console.log(err);
-											})
-											.finally(() => {
 												setLoading(false);
 												setUploading("");
 											});
 									}}
 								/>
+								<div className="w-full">
+									{/* Show current path */}
+									<div className="flex justify-between items-center mb-4 bg-gray-200 rounded-md p-2">
+										<div className="flex items-center">
+											{/* Show path elements and allow for navigation */}
+											{/* Show home icon */}
+											<div
+												className="cursor-pointer"
+												onClick={() => {
+													setCurrentPath("/");
+													setLoading(true);
+												}}
+											>
+												<img src={HomeIcon} width={20} />
+											</div>
+											{currentPath.split("/").map((path, index) => {
+												if (path === "") return;
+												return (
+													<div>
+														<span className="mx-1">/</span>
+														<a
+															className="text-blue-500 cursor-pointer"
+															href="#"
+															onClick={() => {
+																setCurrentPath(
+																	currentPath
+																		.split("/")
+																		.slice(0, index + 1)
+																		.join("/")
+																);
+																setLoading(true);
+															}}
+														>
+															{path}
+														</a>
+													</div>
+												);
+											})}
+										</div>
+										{/* Show upload status */}
+										<div className="flex items-center">
+											{uploading && (
+												<div className="flex items-center">
+													<div className="flex items-center">
+														<svg
+															className="w-4 h-4 mr-2"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 20 20"
+														>
+															<path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm-5.6-4.29a9.95 9.95 0 0 0 11.2 0 8 8 0 1 0-11.2 0zm6.12-7.64l3.02-3.02 1.41 1.41-3.02 3.02a2 2 0 1 1-1.41-1.41z" />
+														</svg>
+														<span>Uploading: {uploadProgress}</span>
+													</div>
+													<span className="mx-1">%</span>
+												</div>
+											)}
+										</div>
+									</div>
+								</div>
 								<div className="w-full grid grid-cols-2 gap-2">
 									<div
-										className="w-full mb-4 bg-gray-200 p-2 cursor-pointer rounded-md hover:bg-gray-300"
+										className={`w-full mb-4 bg-gray-200 p-2 rounded-md ${
+											uploading
+												? "opacity-50"
+												: "cursor-pointer hover:bg-gray-300"
+										}`}
 										onClick={() => {
-											// Show upload dialog
-											const fileUpload = document.getElementById(
-												"fileUpload"
-											) as HTMLInputElement;
-											fileUpload.click();
+											if (!uploading) {
+												// Show upload dialog
+												const fileUpload = document.getElementById(
+													"fileUpload"
+												) as HTMLInputElement;
+												fileUpload.click();
+											}
 										}}
 									>
 										<p className="text-sm text-gray-600 text-center">
@@ -249,14 +325,14 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 										</p>
 									</div>
 									<div
-										className="mb-4 bg-gray-200 mr-3 p-2 cursor-pointer rounded-md hover:bg-gray-300"
+										className="mb-4 bg-gray-200 p-2 cursor-pointer rounded-md hover:bg-gray-300"
 										onClick={() => {
 											setLoading(true);
 											let path = currentPath.split("/").slice(0, -2).join("/");
 											if (path.charAt(0) !== "/") {
 												path = "/" + path;
 											}
-                                            setSelectedFile("");
+											setSelectedFile("");
 											setCurrentPath(path);
 										}}
 									>
@@ -276,8 +352,8 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 												token,
 												currentPath,
 												selectedFile.substring(
-                                                    selectedFile.lastIndexOf("/") + 1
-                                                )
+													selectedFile.lastIndexOf("/") + 1
+												)
 											);
 										}}
 										style={{
@@ -285,7 +361,11 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 										}}
 									>
 										<p className="text-sm text-white text-center">
-											Download {selectedFile.substring(selectedFile.lastIndexOf("/") + 1, selectedFile.length)}
+											Download{" "}
+											{selectedFile.substring(
+												selectedFile.lastIndexOf("/") + 1,
+												selectedFile.length
+											)}
 										</p>
 									</div>
 									<div
@@ -314,7 +394,12 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 									{fileListing.map((file) => {
 										return (
 											<div
-												key={file.name + file.size + file.accessTime + file.modifyTime}
+												key={
+													file.name +
+													file.size +
+													file.accessTime +
+													file.modifyTime
+												}
 												className={`w-full md:w-1/3 pr-3 pb-3 ${
 													file.type === "d" || file.type === "-"
 														? "cursor-pointer"
@@ -342,15 +427,32 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 															<p className="text-gray-700 text-sm">
 																{file.name}
 															</p>
-															<p className="text-gray-500 text-xs">
-																{INodeTypes[file.type]}
-															</p>
 														</div>
 														<div>
 															<p className="text-gray-700 text-sm">
 																{formatFileSize(file.size)}
 															</p>
 														</div>
+													</div>
+													<div className="text-gray-500 text-xs grid grid-cols-2 w-full">
+														<div>
+															<span className="font-bold">
+																{INodeTypes[file.type]}
+															</span>
+															:{" "}
+															{file.rights.user +
+																"/" +
+																file.rights.group +
+																"/" +
+																file.rights.other}
+														</div>
+														<div className="text-right">
+															U/G: {file.owner}/{file.group}
+														</div>
+													</div>
+													<div className="text-gray-500 text-xs w-full">
+														<span className="font-bold">Last modified:</span>{" "}
+														{new Date(file.modifyTime).toLocaleString()}
 													</div>
 												</div>
 											</div>

@@ -66,7 +66,7 @@ const ManageServer = (props: any) => {
 	const [loading, setLoading] = React.useState(true);
 	const params = useParams();
 	const [serverStatus, setServerStatus] = React.useState<IServerStatus>({
-		memory_usage: "100",
+		memory_usage: "0",
 		power_level: "",
 		status: "",
 	});
@@ -423,12 +423,12 @@ const ManageServer = (props: any) => {
 					</div>
 				</div>
 				{/* File manager */}
-				<div className="w-full mt-4">
+				<div className="w-full mt-32 md:mt-4">
 					<div className="bg-white shadow-md rounded p-4">
 						<h3 className="text-xl mb-2">File access</h3>
 						<button
 							onClick={() => setShowFileManager(true)}
-							className="rounded-md px-4 py-2 bg-blue-400 hover:bg-blue-600 transition-all text-white"
+							className="w-full md:w-auto rounded-md px-4 py-2 bg-blue-400 hover:bg-blue-600 transition-all text-white"
 						>
 							Open
 						</button>

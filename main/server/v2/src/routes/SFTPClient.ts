@@ -48,7 +48,7 @@ const getClient = (req: Request): { sftpWrapper: Promise<SFTPWrapper>, client: C
 }
 
 const SFTPClient = () => {
-    const upload = multer({ dest: 'uploads/' });
+    const upload = multer({ dest: 'uploads/', limits: { fileSize: 2147483648 } });
 
     router.all('/', [AuthenticationMiddleware], async (req: Request, res: Response) => {
         res.json({
@@ -71,10 +71,7 @@ const SFTPClient = () => {
                 error: err
             });
         }).finally(() => {
-            try {
-                client.end();
-            } catch (e) {
-            }
+            client.end().catch(e => {});
         })
     });
 
@@ -100,10 +97,7 @@ const SFTPClient = () => {
                 error: err
             });
         }).finally(() => {
-            try {
-                client.end();
-            } catch (e) {
-            }
+            client.end().catch(e => {});
         })
     });
 
@@ -131,10 +125,7 @@ const SFTPClient = () => {
                 error: err
             });
         }).finally(() => {
-            try {
-                client.end();
-            } catch (e) {
-            }
+            client.end().catch(e => {});
         })
     });
 
@@ -170,10 +161,7 @@ const SFTPClient = () => {
                 }).finally(() => {
                     // Delete the file
                     fs.unlinkSync(file.path);
-                    try {
-                        client.end();
-                    } catch (e) {
-                    }
+                    client.end().catch(e => {});
                 });
         }).catch((err: Error) => {
             res.status(500).json({
@@ -206,10 +194,7 @@ const SFTPClient = () => {
                     end: true,
                 }
             }).then(() => {
-                try {
-                    client.end();
-                } catch (e) {
-                }
+                client.end().catch(e => {});
             })
         }).catch((err: Error) => {
             res.status(500).json({

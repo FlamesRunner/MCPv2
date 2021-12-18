@@ -72,11 +72,11 @@ function App() {
 
 						{isAuthenticated ? (
 							<>
-								<Link to="/dashboard">Dashboard</Link>
+								<Link to="/dashboard">Home</Link>
 								<Link to="/dashboard/nodes">Nodes</Link>
 								<Link to="/dashboard/servers">Servers</Link>
 								<Link to="/" onClick={() => auth.signOut()}>
-									Sign Out
+									Logout
 								</Link>
 							</>
 						) : (

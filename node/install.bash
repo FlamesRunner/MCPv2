@@ -23,7 +23,7 @@ fi
 
 echo ">>> Installing prerequisites..."
 sleep 2
-apt-get install -y git python3 python3-pip sqlite3 curl wget python3-flask nginx openssl openjdk-11-jre openssh-server
+apt-get install -y git python3 python3-pip sqlite3 curl wget python3-flask nginx openssl openjdk-17-jre openssh-server
 
 echo ">>> Installing build tools..."
 sleep 2
@@ -59,10 +59,16 @@ cp -R ~/mcp-node-files/scripts/Daemon /var/local/mcp-service/daemon
 cp ~/mcp-node-files/scripts/add-server.bash ~
 chmod +x /var/local/mcp-service/daemon/*.bash
 
+echo ">>> Generating master key..."
+sleep 2
+MASTER_TOKEN=$(openssl rand -hex 16)
+echo "MASTER_TOKEN=$MASTER_TOKEN" > /var/local/mcp-service/daemon/.env
+
 echo ">>> Installing Flask..."
 sleep 2
 cd /var/local/mcp-service/daemon
 pip3 install flask
+pip3 install python-dotenv
 
 echo ">>> Creating systemd service..."
 sleep 2
@@ -95,7 +101,7 @@ systemctl enable mcp-node.service
 
 echo ">>> Configuring OpenSSH to allow jailed SFTP for users..."
 sleep 2
-echo <<EOT > /etc/ssh/sshd_config.d/mcp-jailed-sftp.conf
+cat <<EOT > /etc/ssh/sshd_config.d/mcp-jailed-sftp.conf
 Match Group mcpuser
 	ForceCommand internal-sftp
 	ChrootDirectory /home/%u
@@ -155,4 +161,5 @@ echo ">>> Daemon service: mcp-node"
 echo ">>> To start/restart/etc: systemctl start mcp-node, systemctl stop mcp-node"
 echo ">>> There is a web proxy configured to connect to the daemon (NGINX) that listens on port 5000. This is your API server."
 echo " "
+echo ">>> Please keep the master key safe. It is used for MCPv2's node system: $MASTER_TOKEN"
 echo " "

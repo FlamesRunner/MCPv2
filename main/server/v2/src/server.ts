@@ -62,8 +62,10 @@ mongoose.connection.on('open', () => {
         origin: process.env.FRONTEND_ORIGIN || '*',
     }));
 
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true}));
+    app.use(bodyParser.json({
+        limit: '2gb',
+    }));
+    app.use(bodyParser.urlencoded({ extended: true, limit: '2gb' }));
 
     app.listen(PORT, () => {
         console.log(`MCPv2 API server running on port ${PORT}`);

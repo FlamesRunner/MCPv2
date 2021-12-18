@@ -62,7 +62,7 @@ def jsonify(input: dict):
 def run_cmd_helper(cmd: str, username: str):
     path = '/home/' + username
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-        client.connect(path + "/mcp_in.sock")
+        client.connect(path + "/server/mcp_in.sock")
         client.sendall((cmd + "\r\n").encode())
         client.close()
 
@@ -101,7 +101,7 @@ def server_status(username: str):
 @app.route('/log', methods=['GET'])
 def get_log():
     user = request.environ['user_var']['username']
-    path = '/home/' + user + '/console.txt'
+    path = '/home/' + user + '/server/server_console.log'
     # Check if file exists
     if not os.path.isfile(path):
         return jsonify({'status': 'success', 'log': ''})

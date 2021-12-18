@@ -18,16 +18,24 @@
 #define MAX_ARG_LEN 50
 #define NUM_CONNECTIONS 100
 #define CMD_PATH "mcp_in.sock"
+#define LOG_PATH "./server/server_console.log"
 
-int process_terminated = 0; // Needs to be fixed. This does not do anything as each fork copies its own version of this veriable.
+int process_terminated = 0;
+int java_pid = -1;
+int listener_pid = -1;
 
-/**
- * handler: used for the SIGCHLD signal, to handle the termination of the Java process.
- **/
 void handler(int sig)
 {
-    pid_t chpid = wait(NULL);
-    process_terminated = 1;
+    int status = -1;
+    int pid = -1;
+    while (pid = waitpid((pid_t)(-1), &status, WNOHANG) > 0)
+    {
+        if (pid == java_pid && WIFEXITED(status) && pid > 0)
+        {
+            kill(listener_pid, SIGTERM);
+            process_terminated = 1;
+        }
+    }
 }
 
 /**
@@ -36,7 +44,7 @@ void handler(int sig)
  * min_ram as constraints, and supply the caller with the console file descriptor
  * and command file descriptor.
  **/
-void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fileno)
+void start_server(int *max_ram, int *min_ram, int *console_fileno, int *cmd_fileno)
 {
     int p[2];    // 0 = read, 1 = write
     int p_in[2]; // same as above
@@ -46,8 +54,10 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
         fprintf(stderr, "%s\n", strerror(errno));
         exit(errno);
     }
-    signal(SIGCHLD, handler);
-    if (fork() == 0)
+
+    int pid = fork();
+
+    if (pid == 0)
     {
         // Child
         // Close unused pipe ends
@@ -63,12 +73,20 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
         close(p[WRITE_END]);
         close(p_in[READ_END]);
 
+        // Copy max_ram and min_ram integers to char arrays
+        char max_ram_str[MAX_ARG_LEN];
+        char min_ram_str[MAX_ARG_LEN];
+        sprintf(max_ram_str, "%d", *max_ram);
+        sprintf(min_ram_str, "%d", *min_ram);
+
         char *min_ram_full = calloc(MAX_ARG_LEN * 2, sizeof(char));
         char *max_ram_full = calloc(MAX_ARG_LEN * 2, sizeof(char));
         strcpy(min_ram_full, "-Xms");
         strcpy(max_ram_full, "-Xmx");
-        strcat(min_ram_full, min_ram);
-        strcat(max_ram_full, max_ram);
+        strcat(min_ram_full, min_ram_str);
+        strcat(max_ram_full, max_ram_str);
+        strcat(min_ram_full, "M");
+        strcat(max_ram_full, "M");
 
         int chdir_ret = chdir("./server");
         if (chdir_ret == -1)
@@ -82,7 +100,12 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
         fprintf(stderr, "Failed to start server (err: %s)\n", strerror(errno));
         exit(errno);
     }
-    close(p[1]);
+    else
+    {
+        java_pid = pid;
+        signal(SIGCHLD, handler);
+    }
+    close(p[WRITE_END]);
     *(console_fileno) = p[READ_END];
     *(cmd_fileno) = p_in[WRITE_END];
 }
@@ -92,8 +115,12 @@ void start_server(char *max_ram, char *min_ram, int *console_fileno, int *cmd_fi
  **/
 void read_cmd(int cmd_fd)
 {
-    if (fork() == 0)
+    int curr_pid = fork();
+    if (curr_pid == 0)
     {
+        prctl(PR_SET_PDEATHSIG, SIGHUP);
+        
+        chdir("./server");
         struct sockaddr_un address, client_address;
         address.sun_family = AF_UNIX;
         strcpy(address.sun_path, CMD_PATH);
@@ -105,11 +132,14 @@ void read_cmd(int cmd_fd)
 
         int newsockfd;
         int clilen = sizeof(client_address);
+
         while (newsockfd = accept(fd, (struct sockaddr *)&client_address, &clilen))
         {
-            if (fork() == 0)
+            int proc = fork();
+            if (proc == 0)
             {
                 // Child
+                prctl(PR_SET_PDEATHSIG, SIGHUP);
                 char buf[CMD_BUFFER_SIZE];
                 int n = 0;
                 while ((n = read(newsockfd, buf, sizeof(buf) - 1)) > 0)
@@ -120,7 +150,15 @@ void read_cmd(int cmd_fd)
                 close(newsockfd);
                 exit(0);
             }
+            else
+            {
+                signal(SIGCHLD, SIG_IGN);
+            }
         }
+    }
+    else
+    {
+        listener_pid = curr_pid;
     }
 }
 
@@ -137,16 +175,40 @@ int main(int argc, char **argv)
         fprintf(stderr, "Arguments are limited to %d characters in length.\n", MAX_ARG_LEN); // Enforce argument length so that start_server can assume that the length is <= MAX_ARG_LEN
         exit(1);
     }
-    FILE *console_ptr = fopen("console.txt", "w");
+    FILE *console_ptr = fopen(LOG_PATH, "w");
     int console_fileno, cmd_fileno;
-    start_server(argv[1], argv[2], &console_fileno, &cmd_fileno);
+
+    // Parse argv[1] as max_ram and argv[2] as min_ram
+    int max_ram = atoi(argv[1]);
+    int min_ram = atoi(argv[2]);
+
+    if (max_ram < min_ram)
+    {
+        fprintf(stderr, "max_ram must be greater than min_ram.\n");
+        exit(1);
+    }
+
+    if (console_ptr == NULL)
+    {
+        fprintf(stderr, "Failed to open console.txt.\n");
+        exit(1);
+    }
+
+    if (min_ram < 512)
+    {
+        fprintf(stderr, "min_ram must be greater than 512 (megabytes).\n");
+        exit(1);
+    }
+
+    start_server(&max_ram, &min_ram, &console_fileno, &cmd_fileno);
     read_cmd(cmd_fileno);
+
     int n;
     char buffer[CONSOLE_BUFFER_SIZE];
     while ((n = read(console_fileno, buffer, sizeof(buffer))) > 0 && process_terminated == 0)
     {
-        int stdout_write = write(STDOUT_FILENO, buffer, n);
-        int console_write = write(fileno(console_ptr), buffer, n);
+        write(STDOUT_FILENO, buffer, n);       // Write to stdout
+        write(fileno(console_ptr), buffer, n); // Write to console logfile
     }
     close(console_fileno);
     fclose(console_ptr);

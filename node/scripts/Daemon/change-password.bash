@@ -5,4 +5,4 @@ if [ -z "$1" ] || [ -z "$2" ]; then
 	exit 1
 fi
 
-echo -e "'$2'\n'$2'" | passwd $1
+echo -e "$2\n$2" | passwd $1
