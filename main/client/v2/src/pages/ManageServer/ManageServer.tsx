@@ -14,6 +14,7 @@ import {
 import moment from "moment";
 import IntervalContext from "../../context/IntervalContext";
 import FileManager from "../../components/FileManager";
+import parseMinecraftConsoleOutput from "../../utils/parseMinecraftConsoleOutput";
 
 type IServerStatus = {
 	memory_usage: string;
@@ -297,9 +298,12 @@ const ManageServer = (props: any) => {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{
-					height: "480px",
-				}}>
+				<div
+					className="grid grid-cols-1 md:grid-cols-2 gap-4"
+					style={{
+						height: "480px",
+					}}
+				>
 					<div className="bg-white shadow-md rounded px-4 py-4">
 						<h2 className="text-xl mb-2">Current Memory Usage</h2>
 						<div className="bg-gray-200 h-6 w-full rounded-full">
@@ -367,9 +371,12 @@ const ManageServer = (props: any) => {
 							</ResponsiveContainer>
 						</div>
 					</div>
-					<div className="w-full flex flex-col" style={{
-						height: "480px",
-					}}>
+					<div
+						className="w-full flex flex-col"
+						style={{
+							height: "480px",
+						}}
+					>
 						<pre
 							className="bg-gray-800 text-green-600 w-full p-2 h-full rounded-t-md"
 							style={{
@@ -379,9 +386,10 @@ const ManageServer = (props: any) => {
 								whiteSpace: "pre-wrap",
 							}}
 							ref={consoleRef}
-						>
-							{consoleLog}
-						</pre>
+							dangerouslySetInnerHTML={{
+								__html: parseMinecraftConsoleOutput(consoleLog),
+							}}
+						/>
 						<form
 							onSubmit={(e) => {
 								e.preventDefault();
