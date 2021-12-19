@@ -12,10 +12,9 @@ import {
 	Legend,
 } from "recharts";
 import moment from "moment";
-import IntervalContext from "../../context/IntervalContext";
 import FileManager from "../../components/FileManager";
 import parseMinecraftConsoleOutput from "../../utils/parseMinecraftConsoleOutput";
-import "../../assets/styles/Console.css"
+import "../../assets/styles/Console.css";
 
 type IServerStatus = {
 	memory_usage: string;
@@ -93,8 +92,6 @@ const ManageServer = (props: any) => {
 	const [consoleLog, setConsoleLog] = React.useState<string[]>([]);
 
 	const [showFileManager, setShowFileManager] = React.useState(false);
-
-	const intervals = useContext(IntervalContext);
 
 	const [memoryUsageData, setMemoryUsageData] = React.useState<
 		MemoryUsageDataPoint[]
@@ -183,6 +180,9 @@ const ManageServer = (props: any) => {
 	}
 
 	useEffect(() => {
+		let interval_one: NodeJS.Timeout;
+		let interval_two: NodeJS.Timeout;
+
 		auth.isAuthenticated().then((isAuthenticated) => {
 			if (!isAuthenticated) {
 				navigate("/");
@@ -193,19 +193,22 @@ const ManageServer = (props: any) => {
 			// Fetch available nodes
 			setLoading(false);
 			getServerStatus();
-			intervals.addInterval(
-				setInterval(() => {
-					getServerStatus();
-				}, 5000)
-			);
-			intervals.addInterval(
-				setInterval(() => {
-					getConsoleLog();
-				}, 2000)
-			);
+
+			interval_one = setInterval(() => {
+				getServerStatus();
+			}, 5000);
+
+			interval_two = setInterval(() => {
+				getConsoleLog();
+			}, 2000);
 		}
+
+		return () => {
+			clearInterval(interval_one);
+			clearInterval(interval_two);
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [auth.token, params.id, loading]);
+	}, [auth.token, params.id]);
 
 	return (
 		<div className="serverManage">
