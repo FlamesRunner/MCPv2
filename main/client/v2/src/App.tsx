@@ -15,6 +15,7 @@ import Servers from "./pages/Servers";
 import CreateServer from "./pages/ManageServer/CreateServer";
 import ManageServer from "./pages/ManageServer/ManageServer";
 import IntervalContext from "./context/IntervalContext";
+import EditProfile from "./pages/EditProfile";
 
 function App() {
 	const auth = useAuth();
@@ -96,6 +97,7 @@ function App() {
 						<Route path="/dashboard/servers" element={<Servers />} />
 						<Route path="/dashboard/nodes/add" element={<CreateNode />} />
 						<Route path="/dashboard/servers/add" element={<CreateServer />} />
+						<Route path="/dashboard/profile" element={<EditProfile />} />
 						<Route
 							path="/dashboard/servers/manage/:id"
 							element={<ManageServer />}

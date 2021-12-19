@@ -1,5 +1,5 @@
 import React from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { IUser, IAuthState } from "../types/AuthTypes";
 import { useState } from "react";
@@ -47,7 +47,11 @@ const AuthProvider = (props: AuthProviderProps) => {
 			setToken(authData.token);
 			setExpiry(authData.expiresAt);
 
-			await saveToLocalStorage(authData.user, authData.token, authData.expiresAt);
+			await saveToLocalStorage(
+				authData.user,
+				authData.token,
+				authData.expiresAt
+			);
 
 			const authState = {
 				message: "Successfully logged in",
@@ -79,7 +83,11 @@ const AuthProvider = (props: AuthProviderProps) => {
 			setToken(authData.token);
 			setExpiry(authData.expiresAt);
 
-			await saveToLocalStorage(authData.user, authData.token, authData.expiresAt);
+			await saveToLocalStorage(
+				authData.user,
+				authData.token,
+				authData.expiresAt
+			);
 
 			const authState = {
 				message: "Account created successfully",
@@ -133,11 +141,46 @@ const AuthProvider = (props: AuthProviderProps) => {
 				setToken(authData.token);
 				setExpiry(authData.expiresAt);
 
-				await saveToLocalStorage(authData.user, authData.token, authData.expiresAt);
+				await saveToLocalStorage(
+					authData.user,
+					authData.token,
+					authData.expiresAt
+				);
 			}
 		} catch (error) {
 			console.log(error);
 		}
+	};
+
+	const updateUser = async (
+		email: string,
+		password: string,
+		confirmPassword: string
+	) => {
+		await axios
+			.post(
+				`${process.env.REACT_APP_API_HOST}/api/v1/user/update`,
+				{
+					email: email,
+					password: password,
+					confirmPassword: confirmPassword,
+				},
+				{
+					headers: {
+						Authorization: `${token}`,
+					},
+				}
+			)
+			.then((response) => {
+				if (response.status === 200) {
+					signOut();
+					return true;
+				}
+			})
+			.catch((error: AxiosError) => {
+				throw error.response?.data?.message;
+			});
+		return false;
 	};
 
 	const readFromLocalStorage = async () => {
@@ -146,24 +189,28 @@ const AuthProvider = (props: AuthProviderProps) => {
 		const expiresAt = await localStorage.getItem("expiresAt");
 
 		if (user && token && expiresAt) {
-      let userObj : IUser = {
-        _id: "",
-        username: "",
-        email: "",
-      };
-      try {
-        userObj = await JSON.parse(user);
-      } catch (error) {
-        console.log(error);
-      }
+			let userObj: IUser = {
+				_id: "",
+				username: "",
+				email: "",
+			};
+			try {
+				userObj = await JSON.parse(user);
+			} catch (error) {
+				console.log(error);
+			}
 			setUser(userObj);
 			setToken(token);
 			setExpiry(parseInt(expiresAt));
 		}
-    setHasReadFromLocalStorage(true);
+		setHasReadFromLocalStorage(true);
 	};
 
-	const saveToLocalStorage = async (user: IUser, token: string, expiry: number) => {
+	const saveToLocalStorage = async (
+		user: IUser,
+		token: string,
+		expiry: number
+	) => {
 		await localStorage.setItem("user", JSON.stringify(user));
 		await localStorage.setItem("token", token);
 		await localStorage.setItem("expiresAt", expiry.toString());
@@ -176,8 +223,8 @@ const AuthProvider = (props: AuthProviderProps) => {
 			await refreshToken();
 		}
 
-    // Assume the user is authenticated until proven otherwise
-    if (!hasReadFromLocalStorage) return true;
+		// Assume the user is authenticated until proven otherwise
+		if (!hasReadFromLocalStorage) return true;
 
 		if (token && expiry > Date.now()) {
 			return true;
@@ -197,6 +244,7 @@ const AuthProvider = (props: AuthProviderProps) => {
 				refreshToken,
 				expiresAt: expiry,
 				isAuthenticated,
+				updateUser,
 			}}
 		>
 			{props.children}

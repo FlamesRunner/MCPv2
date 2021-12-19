@@ -1,19 +1,65 @@
+import axios from "axios";
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+interface IServerStatus {
+	status: string;
+	hostname: string;
+	nickname: string;
+}
+
+type INode = {
+	nickname: string;
+	host: string;
+	owner: string;
+};
+
 const Dashboard = () => {
 	const auth = useAuth();
 	const navigate = useNavigate();
+	const [serverStatus, setServerStatus] = React.useState<IServerStatus[]>([]);
+	const [isLoading, setIsLoading] = React.useState<boolean>(true);
+	const [nodeList, setNodeList] = React.useState<INode[]>([]);
 
 	useEffect(() => {
-		auth.isAuthenticated().then((isAuthenticated) => {
-			if (!isAuthenticated) {
-				navigate("/");
-			}
-		});
-	});
-    
+		if (auth.token) {
+			auth.isAuthenticated().then((isAuthenticated) => {
+				if (!isAuthenticated) {
+					navigate("/");
+				} else {
+					if (isLoading) {
+						setIsLoading(false);
+						axios
+							.get(`${process.env.REACT_APP_API_HOST}/api/v1/server/summary`, {
+								headers: {
+									Authorization: `${auth.token}`,
+								},
+							})
+							.then((res) => {
+								if (res) {
+									setServerStatus(res.data.servers);
+								}
+							});
+
+						// Get node list
+						axios
+							.get(`${process.env.REACT_APP_API_HOST}/api/v1/node/list`, {
+								headers: {
+									Authorization: `${auth.token}`,
+								},
+							})
+							.then((res) => {
+								if (res) {
+									setNodeList(res.data.nodes);
+								}
+							});
+					}
+				}
+			});
+		}
+	}, [auth]);
+
 	clearInterval();
 
 	return (
@@ -26,14 +72,17 @@ const Dashboard = () => {
 					<div className="bg-white shadow-md p-4 h-40">
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-xl font-bold">Nodes</h3>
-							<Link to="/dashboard/nodes/add" className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded">
+							<Link
+								to="/dashboard/nodes/add"
+								className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded"
+							>
 								Add
 							</Link>
 						</div>
 						<hr />
 						<div className="mt-4">
 							<ul className="list-inside list-none">
-								<li>You have X nodes.</li>
+								<li>You have {nodeList.length} nodes.</li>
 								<li>0 events require your attention.</li>
 							</ul>
 						</div>
@@ -41,24 +90,36 @@ const Dashboard = () => {
 					<div className="bg-white shadow-md p-4 h-40">
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-xl font-bold">Servers</h3>
-							<Link to="/dashboard/servers/add" className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded">
+							<Link
+								to="/dashboard/servers/add"
+								className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded"
+							>
 								Add
 							</Link>
 						</div>
 						<hr />
 						<div className="mt-4">
 							<ul className="list-inside list-none">
-								<li>You have X servers.</li>
-								<li>Z of X servers are currently online.</li>
+								<li>You have {serverStatus.length} server(s).</li>
+								<li>
+									{
+										serverStatus.filter((server) => server.status === "on")
+											.length
+									}{" "}
+									of {serverStatus.length} server(s) are online.
+								</li>
 							</ul>
 						</div>
 					</div>
 					<div className="bg-white shadow-md p-4 h-40 mb-4 md:mb-0">
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-xl font-bold">Profile</h3>
-							<button className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded">
+							<Link
+								to="/dashboard/profile"
+								className="bg-white transition-all hover:text-white border-2 hover:bg-green-700 hover:border-transparent text-black border-blue-500 py-1 px-2 rounded"
+							>
 								Edit
-							</button>
+							</Link>
 						</div>
 						<hr />
 						<div className="mt-4">

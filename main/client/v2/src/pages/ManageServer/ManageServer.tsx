@@ -15,6 +15,7 @@ import moment from "moment";
 import IntervalContext from "../../context/IntervalContext";
 import FileManager from "../../components/FileManager";
 import parseMinecraftConsoleOutput from "../../utils/parseMinecraftConsoleOutput";
+import "../../assets/styles/Console.css"
 
 type IServerStatus = {
 	memory_usage: string;
@@ -378,7 +379,7 @@ const ManageServer = (props: any) => {
 						}}
 					>
 						<pre
-							className="bg-gray-800 text-green-600 w-full p-2 h-full rounded-t-md"
+							className="bg-gray-800 text-green-600 w-full p-2 h-full rounded-t-md console-scroll"
 							style={{
 								overflowX: "hidden",
 								overflowY: "auto",

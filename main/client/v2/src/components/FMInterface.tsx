@@ -1,103 +1,20 @@
-import axios, { Axios, AxiosResponse } from "axios";
+import axios from "axios";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import "../assets/styles/FMInterface.css";
 import HomeIcon from "../assets/images/home.svg";
-
-type FMProps = {
-	host: string;
-	username: string;
-	password: string;
-	token: string;
-	close: () => void;
-};
-
-type IInode = {
-	name: string;
-	type: "d" | "-" | "l";
-	size: number;
-	modifyTime: number;
-	accessTime: number;
-	owner: number;
-	group: number;
-	rights: {
-		user: string;
-		group: string;
-		other: string;
-	};
-};
+import {
+	deleteFile,
+	downloadFile,
+	formatFileSize,
+	listFiles,
+} from "../utils/fileManager";
+import { FMProps, IInode } from "../utils/fileManager/types";
 
 const INodeTypes = {
 	d: "Directory",
 	l: "Symbolic Link",
 	"-": "File",
 	s: "Socket",
-};
-
-const formatFileSize = (bytes: number) => {
-	const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-	let i = 0;
-	while (bytes >= 1024) {
-		bytes /= 1024;
-		++i;
-	}
-	return `${bytes.toFixed(1) + units[i]}`;
-};
-
-const downloadFile = (
-	host: string,
-	username: string,
-	password: string,
-	token: string,
-	path: string,
-	filename: string
-) => {
-	const url = `${process.env.REACT_APP_API_HOST}/api/v1/sftp/download?path=${path}&fileName=${filename}&username=${username}&password=${password}&host=${host}`;
-	axios({
-		url,
-		method: "GET",
-		responseType: "blob",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `${token}`,
-		},
-	}).then((response: AxiosResponse) => {
-		const blob = new Blob([response.data], {
-			type: "application/octet-stream",
-		});
-		const url = window.URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.setAttribute("download", filename);
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-	});
-};
-
-const deleteFile = (
-	host: string,
-	username: string,
-	password: string,
-	token: string,
-	path: string
-): Promise<AxiosResponse> => {
-	const url = `${process.env.REACT_APP_API_HOST}/api/v1/sftp/rm`;
-	console.log(token);
-	return axios.post(
-		url,
-		{
-			path,
-			username: username,
-			password: password,
-			host: host,
-		},
-		{
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `${token}`,
-			},
-		}
-	);
 };
 
 const FMInterface = ({ host, username, password, close, token }: FMProps) => {
@@ -107,36 +24,32 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 	const [uploading, setUploading] = useState<string>("");
 	const [selectedFile, setSelectedFile] = useState<string>("");
 	const [uploadProgress, setUploadProgress] = useState<number>(0);
+
+	const changePath = (path: string) => {
+		setLoading(true);
+		setCurrentPath(path);
+		setSelectedFile("");
+	};
+
 	useEffect(() => {
-		// Get the file listing
-		axios
-			.post(
-				`${process.env.REACT_APP_API_HOST}/api/v1/sftp/ls`,
-				{
-					host: host,
-					username: username,
-					password: password,
-					path: currentPath,
-				},
-				{
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: token,
-					},
-				}
-			)
-			.then((res) => {
-				const files: IInode[] = res.data?.data || [];
-				setFileListing(files);
+		if (username && password && host && token) {
+			// Get the file listing
+			listFiles({
+				host,
+				username,
+				password,
+				token,
+				path: currentPath,
 			})
-			.catch((err) => {
-				console.log(err);
-			})
-			.finally(() => {
-				setLoading(false);
-			});
+				.then((files) => {
+					setFileListing(files);
+				})
+				.finally(() => {
+					setLoading(false);
+				});
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [loading, currentPath, selectedFile]);
+	}, [currentPath, password, token, username]);
 
 	return (
 		<div className="fileManagerInterface">
@@ -253,28 +166,26 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 											<div
 												className="cursor-pointer"
 												onClick={() => {
-													setCurrentPath("/");
-													setLoading(true);
+													changePath("/");
 												}}
 											>
-												<img src={HomeIcon} width={20} />
+												<img src={HomeIcon} alt="Root directory" width={20} />
 											</div>
 											{currentPath.split("/").map((path, index) => {
-												if (path === "") return;
+												if (path === "") return null;
 												return (
 													<div>
 														<span className="mx-1">/</span>
 														<a
 															className="text-blue-500 cursor-pointer"
-															href="#"
+															href="#dir"
 															onClick={() => {
-																setCurrentPath(
+																changePath(
 																	currentPath
 																		.split("/")
 																		.slice(0, index + 1)
 																		.join("/")
 																);
-																setLoading(true);
 															}}
 														>
 															{path}
@@ -328,12 +239,16 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 										className="mb-4 bg-gray-200 p-2 cursor-pointer rounded-md hover:bg-gray-300"
 										onClick={() => {
 											setLoading(true);
-											let path = currentPath.split("/").slice(0, -2).join("/");
-											if (path.charAt(0) !== "/") {
-												path = "/" + path;
+
+											// Move up one directory if current path is not root
+											if (
+												currentPath !== "/" &&
+												currentPath.charAt(currentPath.length - 1) !== "/"
+											) {
+												changePath(
+													currentPath.split("/").slice(0, -1).join("/")
+												);
 											}
-											setSelectedFile("");
-											setCurrentPath(path);
 										}}
 									>
 										<p className="text-sm text-gray-600 text-center">
@@ -369,7 +284,7 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 										</p>
 									</div>
 									<div
-										className="mb-4 bg-red-500 h-9 overflow-x-auto mr-3 p-2 cursor-pointer rounded-md hover:bg-red-600"
+										className="mb-4 bg-red-500 h-9 overflow-x-auto p-2 cursor-pointer rounded-md hover:bg-red-600"
 										onClick={() => {
 											setLoading(true);
 											deleteFile(
@@ -407,19 +322,30 @@ const FMInterface = ({ host, username, password, close, token }: FMProps) => {
 												}`}
 												onClick={() => {
 													if (file.type === "-") {
-														setSelectedFile(currentPath + file.name);
+														setSelectedFile(
+															currentPath === "/"
+																? currentPath + file.name
+																: currentPath + "/" + file.name
+														);
 													} else if (file.type === "d") {
-														setLoading(true);
-														setCurrentPath(`${currentPath}${file.name}/`);
-														setSelectedFile("");
+														// Change path to directory file.name
+														changePath(
+															currentPath === "/"
+																? currentPath + file.name
+																: currentPath + "/" + file.name
+														);
 													}
 												}}
 											>
 												<div
-													className={`bg-gray-200 rounded-lg p-2 overflow-x-auto ${
+													className={`rounded-lg p-2 overflow-x-auto ${
 														file.type === "d" || file.type === "-"
-															? "hover:bg-gray-300"
-															: ""
+															? selectedFile.substring(
+																	selectedFile.lastIndexOf("/") + 1
+															  ) === file.name
+																? "bg-gray-300"
+																: "bg-gray-200 hover:bg-gray-300"
+															: "bg-gray-200"
 													}`}
 												>
 													<div className="flex justify-between gap-2">

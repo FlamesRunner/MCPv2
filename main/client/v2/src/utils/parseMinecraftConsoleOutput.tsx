@@ -37,6 +37,10 @@ const parseMinecraftConsoleOutput = (output: string[]): string => {
 			f: "#FFFFFF",
 			"0": "#000000",
 			r: "rgba(5, 150, 105)",
+            l: "white", // Bold
+            m: "white", // Strike through
+            n: "white", // Underline
+            o: "white", // Italics
 		};
 
 		// If some line has a colour, replace it with a span tag with the colour. Ensure the span tag is closed, even if the line doesn't any further colours.

@@ -13,6 +13,7 @@ interface IAuthContext {
     register: (username: string, email: string, password: string) => Promise<IAuthState>;
     refreshToken: () => void;
     isAuthenticated: () => Promise<boolean>;
+    updateUser: (email: string, password: string, confirmPassword: string) => Promise<boolean>;
 }
 
 interface IAuthState {

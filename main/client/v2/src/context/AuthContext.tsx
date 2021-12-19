@@ -27,6 +27,9 @@ const AuthContext = React.createContext<IAuthContext>({
 	isAuthenticated: async () => {
 		return false;
 	},
+	updateUser: async () => {
+		return false;
+	},
 });
 
 const useAuth = () => useContext(AuthContext);

@@ -211,6 +211,77 @@ const UserRoutes = (models: Models) => {
         }
     });
 
+    router.post('/update', async (req: Request, res: Response) => {
+        const token = req.headers.authorization;
+
+        if (!token) {
+            return res.status(401).json({
+                message: 'No token provided'
+            });
+        }
+
+        try {
+            jwt.verify(token, process.env.JWT_SECRET, async (err: Error, decoded: AuthData) => {
+                if (err) {
+                    return res.status(401).json({
+                        message: 'Invalid token'
+                    });
+                }
+
+                const user = await UserModel.findOne({
+                    _id: decoded._id
+                });
+
+                if (!user) {
+                    return res.status(401).json({
+                        message: 'Invalid token'
+                    });
+                }
+
+                // Check if the email is valid
+                if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(req.body.email)) {
+                    res.status(400).json({
+                        message: 'Invalid email'
+                    });
+                    return;
+                }
+                user.email = req.body.email;
+                
+                if (req.body.password && req.body.password.length > 0) {
+                    // Check if the password is at least 8 characters
+                    if (req.body.password.length < 8) {
+                        res.status(400).json({
+                            message: 'Password must be at least 8 characters'
+                        });
+                        return;
+                    }
+
+                    // Check if the password matches the confirmation
+                    if (req.body.password !== req.body.confirmPassword) {
+                        res.status(400).json({
+                            message: 'Passwords do not match'
+                        });
+                        return;
+                    }
+
+                    const hashed_password = bcrypt.hashSync(req.body.password, 10);
+                    user.password = hashed_password;
+                }
+
+                await user.save();
+
+                res.json({
+                    message: 'User updated successfully',
+                    email: user.email
+                });
+            });
+        } catch (err) {
+            res.status(500).json({
+                message: 'Error updating user'
+            });
+        }
+    });
+
     return router;
 }
 

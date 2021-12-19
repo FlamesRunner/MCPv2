@@ -11,6 +11,7 @@ import { INode } from '../models/Node';
 import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import https from 'https';
+import IServerStatus from 'Server';
 
 const router = express.Router();
 
@@ -622,6 +623,62 @@ const ManageServerRoutes = (models: Models) => {
             message: 'SFTP password generated',
             username: server.nickname,
             password: result.data.password,
+        });
+    });
+
+    router.get('/summary', [AuthenticationMiddleware], async (req: Request, res: Response) => {
+        // Get server status for all servers
+        const auth_data = res.locals.user as IAuthData;
+        const user: IUser = await UserModel.findById(auth_data._id);
+
+        if (!user) {
+            return res.status(500).json({
+                message: 'User not found'
+            });
+        }
+
+        const server_ids = user.servers;
+        const servers: IServer[] = await ServerModel.find({ _id: { $in: server_ids } });
+
+        if (!servers) {
+            return res.status(200).json({
+                message: 'Server status retrieved',
+                servers: []
+            });
+        }
+
+        const server_status: IServerStatus[] = [];
+
+        const promises = servers.map(async (server: IServer) => {
+            const result = await axios.get(`https://${server.host}:5000/status`, {
+                headers: {
+                    'TOKEN': `${server.token}`
+                },
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false
+                })
+            });
+
+            if (result.status !== 200) {
+                server_status.push({
+                    hostname: server.host,
+                    nickname: server.nickname,
+                    status: 'offline'
+                });
+            } else {
+                server_status.push({
+                    hostname: server.host,
+                    nickname: server.nickname,
+                    status: result.data.power_level
+                });
+            }
+        });
+
+        await Promise.all(promises);
+
+        return res.json({
+            message: 'Server status retrieved',
+            servers: server_status
         });
     });
 
