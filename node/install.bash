@@ -11,13 +11,17 @@ if [[ $(id -u) -ne 0 ]] ; then
         exit 1
 fi
 
+echo ">>> Updating apt repositories..."
+sleep2
+apt-get update -y
+
 echo ">>> Installing prerequisite for installer checks..."
 sleep 2
 apt-get install -y bc
 
 DEBIAN_VERSION=$(cat /etc/debian_version)
-if (( $(echo "$DEBIAN_VERSION < 10" | bc -l) )); then
-        echo "You must be running Debian 10.x."
+if (( $(echo "$DEBIAN_VERSION < 11" | bc -l) )); then
+        echo "You must be running Debian 11.x."
         exit 1
 fi
 
