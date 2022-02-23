@@ -11,7 +11,6 @@ ReactDOM.render(
 		{/* React router initialization */}
 		<BrowserRouter>
 			<AuthProvider>
-
 					<App />
 			</AuthProvider>
 		</BrowserRouter>

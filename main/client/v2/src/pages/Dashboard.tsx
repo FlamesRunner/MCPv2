@@ -1,6 +1,6 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 interface IServerStatus {
@@ -17,50 +17,54 @@ type INode = {
 
 const Dashboard = () => {
 	const auth = useAuth();
-	const navigate = useNavigate();
 	const [serverStatus, setServerStatus] = React.useState<IServerStatus[]>([]);
 	const [isLoading, setIsLoading] = React.useState<boolean>(true);
 	const [nodeList, setNodeList] = React.useState<INode[]>([]);
+	const [authenticated, setAuthenticated] = React.useState<boolean>(false);
 
 	useEffect(() => {
-		if (auth.token) {
-			auth.isAuthenticated().then((isAuthenticated) => {
-				if (!isAuthenticated) {
-					navigate("/");
-				} else {
-					if (isLoading) {
-						setIsLoading(false);
-						axios
-							.get(`${process.env.REACT_APP_API_HOST}/api/v1/server/summary`, {
-								headers: {
-									Authorization: `${auth.token}`,
-								},
-							})
-							.then((res) => {
-								if (res) {
-									setServerStatus(res.data.servers);
-								}
-							});
+		let isMounted = true;
+		auth.isAuthenticated().then((isAuthenticated) => {
+			if (isMounted) setAuthenticated(isAuthenticated);
+			if (isLoading) {
+				if (isAuthenticated) {
+				axios
+					.get(`${process.env.REACT_APP_API_HOST}/api/v1/server/summary`, {
+						headers: {
+							Authorization: `${auth.token}`,
+						},
+					})
+					.then((res) => {
+						if (res) {
+							if (isMounted) setServerStatus(res.data.servers);
+						}
+					}).catch((err: AxiosError) => {
+					});
 
-						// Get node list
-						axios
-							.get(`${process.env.REACT_APP_API_HOST}/api/v1/node/list`, {
-								headers: {
-									Authorization: `${auth.token}`,
-								},
-							})
-							.then((res) => {
-								if (res) {
-									setNodeList(res.data.nodes);
-								}
-							});
-					}
+				// Get node list
+				axios
+					.get(`${process.env.REACT_APP_API_HOST}/api/v1/node/list`, {
+						headers: {
+							Authorization: `${auth.token}`,
+						},
+					})
+					.then((res) => {
+						if (res) {
+							if (isMounted) setNodeList(res.data.nodes);
+						}
+					}).catch((err: AxiosError) => {
+					});
 				}
-			});
-		}
+				if (isMounted) setIsLoading(false);
+			}
+		});
+		return () => { isMounted = false };
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [auth]);
 
-	clearInterval();
+	if (!isLoading && !authenticated) {
+		return <Navigate to="/auth/login" />;
+	}
 
 	return (
 		<div className="dashboard">

@@ -3,6 +3,7 @@ import axios, { AxiosError } from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { IUser, IAuthState } from "../types/AuthTypes";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 type AuthResponse = {
 	token: string;
@@ -30,6 +31,8 @@ const AuthProvider = (props: AuthProviderProps) => {
 
 	const [hasReadFromLocalStorage, setHasReadFromLocalStorage] =
 		useState<boolean>(false);
+
+	const navigate = useNavigate();
 
 	const login = async (user: string, password: string) => {
 		try {
@@ -105,12 +108,17 @@ const AuthProvider = (props: AuthProviderProps) => {
 	};
 
 	const signOut = async () => {
+		await localStorage.removeItem("user");
+		await localStorage.removeItem("token");
+		await localStorage.removeItem("expiresAt");
 		setUser({
 			_id: "",
 			username: "",
 			email: "",
 		});
 		setToken("");
+		setExpiry(0);
+		navigate("/");
 	};
 
 	const refreshToken = async () => {
@@ -119,9 +127,14 @@ const AuthProvider = (props: AuthProviderProps) => {
 		if (
 			expiry - 5 * 60 * 1000 > Date.now() ||
 			token === "" ||
-			lastRefreshed + 5 * 60 * 1000 > Date.now()
+			lastRefreshed + 5 * 60 * 1000 > Date.now() ||
+			expiry < Date.now()
 		) {
-			return;
+			return {
+				user: user,
+				token: token,
+				expiresAt: expiry,
+			};
 		}
 		setLastRefreshed(Date.now());
 		try {
@@ -146,10 +159,16 @@ const AuthProvider = (props: AuthProviderProps) => {
 					authData.token,
 					authData.expiresAt
 				);
+				return {
+					user: authData.user,
+					token: authData.token,
+					expiresAt: authData.expiresAt
+				};
 			}
 		} catch (error) {
 			console.log(error);
 		}
+		return null;
 	};
 
 	const updateUser = async (
@@ -184,6 +203,8 @@ const AuthProvider = (props: AuthProviderProps) => {
 	};
 
 	const readFromLocalStorage = async () => {
+		if (hasReadFromLocalStorage) return;
+
 		const user = await localStorage.getItem("user");
 		const token = await localStorage.getItem("token");
 		const expiresAt = await localStorage.getItem("expiresAt");
@@ -195,15 +216,19 @@ const AuthProvider = (props: AuthProviderProps) => {
 				email: "",
 			};
 			try {
-				userObj = await JSON.parse(user);
+				userObj = JSON.parse(user);
 			} catch (error) {
 				console.log(error);
 			}
 			setUser(userObj);
 			setToken(token);
 			setExpiry(parseInt(expiresAt));
+			setHasReadFromLocalStorage(true);
+			return;
+		} else {
+			setHasReadFromLocalStorage(true);
+			return;
 		}
-		setHasReadFromLocalStorage(true);
 	};
 
 	const saveToLocalStorage = async (
@@ -217,20 +242,13 @@ const AuthProvider = (props: AuthProviderProps) => {
 	};
 
 	const isAuthenticated = async () => {
-		if (!hasReadFromLocalStorage) {
-			await readFromLocalStorage();
-		} else {
-			await refreshToken();
-		}
-
-		// Assume the user is authenticated until proven otherwise
+		await readFromLocalStorage();
 		if (!hasReadFromLocalStorage) return true;
-
-		if (token && expiry > Date.now()) {
+		const ret = await refreshToken();
+		if (ret && ret.user && ret.token && ret.expiresAt) {
 			return true;
-		} else {
-			return false;
 		}
+		return false;
 	};
 
 	return (

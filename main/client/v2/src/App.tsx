@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { Route, Routes, useLocation } from "react-router";
-import Home from "./pages/Home";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import "./assets/styles/Header.css";
 import Logo from "./assets/images/logo.png";
 import { Link } from "react-router-dom";
@@ -48,7 +47,7 @@ function App() {
 							<Link to="/dashboard">Home</Link>
 							<Link to="/dashboard/nodes">Nodes</Link>
 							<Link to="/dashboard/servers">Servers</Link>
-							<Link to="/" onClick={() => auth.signOut()}>
+							<Link to="/" onClick={auth.signOut}>
 								Logout
 							</Link>
 						</>
@@ -63,7 +62,7 @@ function App() {
 			</nav>
 			<div className="content">
 				<Routes>
-					<Route path="/" element={<Home />} />
+					<Route path="/" element={<Navigate to="/dashboard" />} />
 					<Route path="/dashboard" element={<Dashboard />} />
 					<Route path="/dashboard/nodes" element={<Nodes />} />
 					<Route path="/dashboard/servers" element={<Servers />} />

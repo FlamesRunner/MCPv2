@@ -18,12 +18,9 @@ const SignIn = () => {
                 setMessage(resp.message || "");
             }
             setProcessing(false);
+			navigate("/dashboard");
 		}, 1000);
 	};
-
-    if (!processing && auth.token && auth.expiresAt > Date.now()) {
-        navigate("/dashboard");
-    }
 
 	return (
 		<div className="w-full full-page md:flex md:justify-center md:align-middle md:items-center bg-gray-100">
