@@ -1,3 +1,5 @@
-server_start: main.cpp
-	g++ -c -o server.a server.cpp -lpthread
-	g++ -O3 -o main -lm main.cpp server.a -lpthread
+CC = g++
+CFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -O3 -g
+
+server_start: server.cpp
+	$(CC) $(CFLAGS) -o server server.cpp

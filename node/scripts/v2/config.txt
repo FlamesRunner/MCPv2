@@ -1,0 +1,7 @@
+EXECUTABLE=/usr/bin/java
+WORKING_DIR=/home/andrew/MCPv2/node/server
+ARGS=java -Xmx1024M -Xms1024M -jar server.jar
+OUTPUT=output.txt
+SOCKET=mcp_in.sock
+UID=andrew
+GID=andrew
