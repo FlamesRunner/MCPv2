@@ -7,7 +7,7 @@ A Minecraft server control panel
 
 # Development
 
-Version 2.1 is currently being developed. It is expected to be ready for installation by the end of December 2021.
+Version 2 is currently being developed. This includes various upgrades -- for example, the backend will now rely on a single server wrapper that uses configuration files for servers rather than being called in each individual home folder.
 
 # Attribution, credits and licensing
 
