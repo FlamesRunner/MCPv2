@@ -53,7 +53,7 @@ cd ~
 mkdir mcp-skel
 cp -R ~/mcp-node-files/server ~/mcp-skel/server
 cp ~/mcp-node-files/scripts/v2/mcp_wrapper /usr/sbin/mcp_wrapper
-chmod 700 ~/usr/sbin/mcp_wrapper
+chmod 700 /usr/sbin/mcp_wrapper
 
 echo ">>> Creating service directory..."
 sleep 2
