@@ -29,4 +29,19 @@ chown root:root /home/$1/server_start
 chmod 755 /home/$1/server_start
 TOKEN=$(openssl rand -base64 32)
 sqlite3 /var/local/mcp-service/daemon/node.db "INSERT INTO servers (token, user) VALUES (\"$TOKEN\", \"$1\")"
+echo "Generating base configuration..."
+cat <<EOF > /home/$1/server_config.txt
+EXECUTABLE=/usr/bin/java
+WORKING_DIR=/home/$1/server
+ARGS=java -Xmx1024M -Xms512M -jar server.jar
+OUTPUT=/home/$1/server/server_console.log
+SOCKET=/home/$1/server/mcp_in.sock
+UID=$1
+GID=$1
+EOF
+
+# Update file permissions; if the user is able to modify the file, they can execute arbitrary code as any user.
+chown root:root /home/$1/server_config.txt
+chmod 644 /home/$1/server_config.txt
+
 echo "Server created. Token: $TOKEN"

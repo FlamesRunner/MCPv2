@@ -47,6 +47,7 @@ def action_query(query, params):
 def jsonify(input: dict):
     return json.dumps(input)
 
+
 """
     Runs a command on a Minecraft server.
     
@@ -122,10 +123,13 @@ def get_log():
     Returns:
         - username: The current user's username.
 """
+
+
 @app.route('/user', methods=['GET'])
 def get_user():
     user = request.environ['user_var']['username']
     return jsonify({"status": "success", "username": user})
+
 
 """
     Starts MC server.
@@ -147,9 +151,21 @@ def start_server():
     user = request.environ['user_var']['username']
     if server_status(user) == True:
         return jsonify({"status": "error", "msg": "Server is already running."})
-    path = '/home/' + user
-    cmd_str = 'cd ' + path + ' && su - ' + user + ' -c \'nohup ./server_start ' + \
-        max_ram + ' ' + min_ram + ' &> /dev/null\''
+
+    # Create server config file and save to /home/$user/server_config.txt
+    # Write to file
+    f = open("/home/" + user + "/server_config.txt", "w")
+    f.write("EXECUTABLE=/usr/bin/java\n")
+    f.write("WORKING_DIR=/home/" + user + "/server\n")
+    f.write("ARGS=java -Xmx" + max_ram + "M -Xms" + min_ram + "M -jar server.jar\n")
+    f.write("OUTPUT=/home/" + user + "/server/server_console.log\n")
+    f.write("SOCKET=/home/" + user + "/server/mcp_in.sock\n")
+    f.write("UID=" + user + "\n")
+    f.write("GID=" + user + "\n")
+    f.close()
+
+    path_to_config = "/home/" + user + "/server_config.txt"
+    cmd_str = "nohup /usr/sbin/mcp_wrapper " + path_to_config + " &> /dev/null"
     os.system(cmd_str)
     return jsonify({"status": "success"})
 
@@ -170,7 +186,7 @@ def kill_server():
     if server_status(user) == False:
         return jsonify({"status": "error", "msg": "Server is not running."})
     os.system("pkill -U " + user + " -9 java")
-    os.system("pkill -U " + user + " -9 server_start")
+    os.system("pkill -U " + user + " -9 mcp_wrapper")
     return jsonify({"status": "success"})
 
 
@@ -212,9 +228,13 @@ def stop_server():
     if server_status(user) == False:
         return jsonify({"status": "error", "msg": "Server is not running."})
     run_cmd_helper("stop", user)
-    os.system("pkill -U " + user + " -9 server_start")
-    return jsonify({"status": "success"})
-
+    # Wait for server to stop for 15 seconds
+    for i in range(15):
+        if server_status(user) == False:
+            return jsonify({"status": "success"})
+        time.sleep(1)
+    # If server is still running, return error
+    return jsonify({"status": "error", "msg": "Server is still running -- has it stopped responding? If the problem persists, please save your world and kill the server."})
 
 """
     Returns power level of MC server.
@@ -249,6 +269,8 @@ if __name__ == "__main__":
     Returns:
         - JSON string containing all servers    
 """
+
+
 @app.route('/list_all', methods=['GET'])
 def list_all():
     user = request.environ['user_var']['username']
@@ -268,6 +290,8 @@ def list_all():
     Returns:
         - JSON string indicating whether or not the server was successfully created.
 """
+
+
 @app.route('/create', methods=['POST'])
 def create_server():
     user = request.environ['user_var']['username']
@@ -302,6 +326,7 @@ def create_server():
     else:
         return jsonify({"status": "error", "msg": "Error: " + result.stdout.decode('utf-8').rstrip('\n')})
 
+
 """
     Delete a server.
 
@@ -310,6 +335,8 @@ def create_server():
     Returns:
         - JSON string indicating whether or not the server was successfully deleted.
 """
+
+
 @app.route('/delete', methods=['POST'])
 def delete_server():
     user = request.environ['user_var']['username']
@@ -322,7 +349,7 @@ def delete_server():
         return jsonify({"status": "error", "msg": "Username must be alphanumeric"})
     if len(username) <= 8 or len(username) >= 16:
         return jsonify({"status": "error", "msg": "Username must be between 8 and 16 characters"})
-    
+
     # Check if server exists in database
     c = get_db().cursor()
     c.execute("SELECT * FROM servers WHERE user=?", (username,))
@@ -342,6 +369,7 @@ def delete_server():
     else:
         return jsonify({"status": "error", "msg": "Error: Your server could not be deleted."})
 
+
 """ 
     Generates SFTP password for a server.
 
@@ -350,6 +378,8 @@ def delete_server():
     Returns:
         - JSON string containing SFTP password if successful, otherwise error message.
 """
+
+
 @app.route('/sftp', methods=['GET'])
 def sftp():
     user = request.environ['user_var']['username']
@@ -360,7 +390,7 @@ def sftp():
     # Change system password for user
     result = subprocess.run(
         ['./change-password.bash', user, token], stdout=subprocess.PIPE)
-    
+
     if result.returncode == 0:
         return jsonify({"status": "success", "msg": "SFTP password successfully generated.", "password": token})
     return jsonify({"status": "error", "msg": "SFTP password could not be generated."})

@@ -31,7 +31,7 @@ apt-get install -y git python3 python3-pip sqlite3 curl wget python3-flask nginx
 
 echo ">>> Installing build tools..."
 sleep 2
-apt-get install -y build-essential gcc
+apt-get install -y build-essential gcc g++
 
 echo ">>> Cloning repository to a temporary directory..."
 sleep 2
@@ -44,7 +44,7 @@ rm -rf /tmp/MCPv2
 
 echo ">>> Building server wrapper..."
 sleep 2
-cd ~/mcp-node-files/scripts
+cd ~/mcp-node-files/scripts/v2
 make
 
 echo ">>> Generating skeleton directory..."
@@ -52,8 +52,8 @@ sleep 2
 cd ~
 mkdir mcp-skel
 cp -R ~/mcp-node-files/server ~/mcp-skel/server
-cp ~/mcp-node-files/scripts/server_start ~/mcp-skel/server_start
-chmod 700 ~/mcp-skel/server_start
+cp ~/mcp-node-files/scripts/v2/mcp_wrapper /usr/sbin/mcp_wrapper
+chmod 700 ~/usr/sbin/mcp_wrapper
 
 echo ">>> Creating service directory..."
 sleep 2
