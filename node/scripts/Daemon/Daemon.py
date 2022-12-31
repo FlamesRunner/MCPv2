@@ -83,7 +83,7 @@ def server_status(username: str):
     res = subprocess.run(['ps', '-U', username], stdout=subprocess.PIPE)
     if res.returncode > 0:
         return False
-    if "server_start" in res.stdout.decode("utf-8"):
+    if "mcp_wrapper" in res.stdout.decode("utf-8"):
         return True
     return False
 
@@ -157,7 +157,7 @@ def start_server():
     f = open("/home/" + user + "/server_config.txt", "w")
     f.write("EXECUTABLE=/usr/bin/java\n")
     f.write("WORKING_DIR=/home/" + user + "/server\n")
-    f.write("ARGS=java -Xmx" + max_ram + "M -Xms" + min_ram + "M -jar server.jar\n")
+    f.write("ARGS=java -Xmx" + max_ram + " -Xms" + min_ram + " -jar server.jar\n")
     f.write("OUTPUT=/home/" + user + "/server/server_console.log\n")
     f.write("SOCKET=/home/" + user + "/server/mcp_in.sock\n")
     f.write("UID=" + user + "\n")
